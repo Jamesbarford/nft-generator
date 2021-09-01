@@ -24,8 +24,9 @@ void printPixel(int x, int y, png_byte *pixel) {
 }
 int imgpngAllocRows(imgpng *img) {
     if ((img->rows = pngAllocRows(img->png_ptr, img->info, img->height)) ==
-        NULL)
+        NULL) {
         return -1;
+    }
     return 1;
 }
 
@@ -149,7 +150,6 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during init_io");
 
-    /* write header */
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during writing header");
 
@@ -161,13 +161,11 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
     png_init_io(png_ptr, fp);
     png_write_info(png_ptr, info_ptr);
 
-    /* write bytes */
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during writing bytes");
 
     png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
 
-    /* end write */
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during end of write");
 
@@ -177,11 +175,6 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
 }
 
 void colourCheck(imgpng *img) {
-    if (png_get_color_type(img->png_ptr, img->info) == PNG_COLOR_TYPE_RGB)
-        panic("Processing Error: input file is PNG_COLOR_TYPE_RGB but must be "
-              "PNG_COLOR_TYPE_RGBA "
-              "(lacks the alpha channel)");
-
     if (png_get_color_type(img->png_ptr, img->info) != PNG_COLOR_TYPE_RGBA)
         panic("Processing Error: color_type of input file must be "
               "PNG_COLOR_TYPE_RGBA (%d) (is %d)",
