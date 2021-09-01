@@ -9,7 +9,6 @@
 #include "imgpng.h"
 #include "panic.h"
 #include "imageprocessing.h"
-#include "list.h"
 #include "palettes.h"
 
 typedef  struct imgProcessOpts {

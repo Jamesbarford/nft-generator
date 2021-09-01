@@ -4,7 +4,6 @@
 
 #include "palettes.h"
 #include "hmap.h"
-#include "list.h"
 
 static int hexTable(char c) {
 	switch (c) {

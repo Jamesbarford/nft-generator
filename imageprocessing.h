@@ -1,7 +1,6 @@
 #ifndef __IMAGE_PROCESSING_H__
 #define __IMAGE_PROCESSING_H__
 
-#include "list.h"
 #include "palettes.h"
 #include "imgpng.h"
 

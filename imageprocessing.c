@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "list.h"
 #include "palettes.h"
 #include "imageprocessing.h"
 #include "imgpng.h"

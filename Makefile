@@ -16,7 +16,6 @@ OBJS = $(OUT)/main.o \
        $(OUT)/panic.o \
        $(OUT)/imgpng.o \
 			 $(OUT)/hmap.o \
-       $(OUT)/list.o \
        $(OUT)/palettes.o \
        $(OUT)/imageprocessing.o
 
@@ -29,7 +28,6 @@ $(OUT)/main.o: \
 	./panic.h \
 	./imgpng.h \
 	./imageprocessing.h \
-	./list.h \
 	./hmap.h \
 	./palettes.h
 
@@ -46,13 +44,8 @@ $(OUT)/imageprocessing.o: \
 	./imageprocessing.h \
 	./palettes.h
 
-$(OUT)/list.o: \
-	./list.c \
-	./list.h
-
 $(OUT)/palettes.o: \
 	./palettes.c \
-	./list.h \
 	./hmap.h \
 	./palettes.h
 
