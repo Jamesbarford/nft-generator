@@ -2,3 +2,5 @@
 build
 *.png
 .DS_Store
+*.swo
+*.swp

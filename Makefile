@@ -12,11 +12,17 @@ clean:
 	rm $(TARGET)
 	rm $(OUT)/*.o
 
-OBJS = $(OUT)/main.o
+OBJS = $(OUT)/main.o \
+       $(OUT)/ihmap.o
 
 
 $(TARGET): $(OBJS)
 	$(CC) -o $(TARGET) $(OBJS) -lpng -lm
 
 $(OUT)/main.o: \
-	./main.c
+	./main.c \
+	./ihmap.h
+
+$(OUT)/inthashmap.o: \
+	./ihmap.c \
+	./ihmap.h

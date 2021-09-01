@@ -276,8 +276,7 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
 	fclose(fp);
 }
 
-
-void imgEditFile(imgpng *img) {
+void colourCheck(imgpng *img) {
 	if (png_get_color_type(img->png_ptr, img->info) == PNG_COLOR_TYPE_RGB)
 		abort_("Processing Error: input file is PNG_COLOR_TYPE_RGB but must be PNG_COLOR_TYPE_RGBA "
 					 "(lacks the alpha channel)");
@@ -285,6 +284,10 @@ void imgEditFile(imgpng *img) {
 	if (png_get_color_type(img->png_ptr, img->info) != PNG_COLOR_TYPE_RGBA)
 		abort_("Processing Error: color_type of input file must be PNG_COLOR_TYPE_RGBA (%d) (is %d)",
 					 PNG_COLOR_TYPE_RGBA, png_get_color_type(img->png_ptr, img->info));
+}
+
+void imgEditFile(imgpng *img) {
+	colourCheck(img);
 
 	png_byte *row;
 	png_byte *pixel;
@@ -343,7 +346,6 @@ static imgpngBasic *pixilateImage(imgpng *img, int scale) {
  * This is quite a simple algorithm and the results are a bit choppy
  * https://stackoverflow.com/questions/15777821/how-can-i-pixelate-a-jpg-with-java */
 static imgpngBasic *pixilateImage2(imgpng *img, int scale) {
-	ihmap *hm = ihmapCreate(1 << 9);
 	imgpngBasic *imgscaled = imgpngBasicCreate(img->width,
 			img->height);
 
