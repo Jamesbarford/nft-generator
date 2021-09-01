@@ -191,14 +191,14 @@ hmap *colorPaletteMapCreate() {
   hmap *hm = hmapCreate(1 << 10);
   hm->freeValue = _colorPaletteRelease;
 
-	hmapSetValue(hm, "1", allocPalette(8, palette1));
-	hmapSetValue(hm, "2", allocPalette(4, palette2));
+  hmapSetValue(hm, "1", allocPalette(8, palette1));
+  hmapSetValue(hm, "2", allocPalette(4, palette2));
   hmapSetValue(hm, "3", allocPalette(16, palette3));
-	hmapSetValue(hm, "4", allocPalette(4, palette4));
-	hmapSetValue(hm, "5", allocPalette(15, palette5));
-	hmapSetValue(hm, "6", allocPalette(16, palette6));
-	hmapSetValue(hm, "7", allocPalette(13, palette7));
-	hmapSetValue(hm, "8", allocPalette(8, palette8));
+  hmapSetValue(hm, "4", allocPalette(4, palette4));
+  hmapSetValue(hm, "5", allocPalette(15, palette5));
+  hmapSetValue(hm, "6", allocPalette(16, palette6));
+  hmapSetValue(hm, "7", allocPalette(13, palette7));
+  hmapSetValue(hm, "8", allocPalette(8, palette8));
 
   return hm;
 }
