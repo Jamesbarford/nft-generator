@@ -1,3 +1,4 @@
 *.out
 build
 *.png
+.DS_Store

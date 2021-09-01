@@ -8,6 +8,8 @@
 #include <time.h>
 #include <math.h>
 
+#include "ihmap.h"
+
 #define PNG_DEBUG 3
 #define R 0
 #define G 1
@@ -42,7 +44,10 @@ typedef struct imgpngBasic {
 
 
 static int examplePalette[][3] = {
-		{244,  32,   12 },
+	{44, 33, 55},
+  {118, 68, 98},
+	{237, 180, 161},
+	{169, 104, 104},
 };
 static void coloriseImage(imgpngBasic *imgb, int palette[][3], int paletteSize);
 
@@ -294,23 +299,21 @@ void imgEditFile(imgpng *img) {
 	}
 }
 
-/*https://stackoverflow.com/questions/15777821/how-can-i-pixelate-a-jpg-with-java*/
+/**
+ * This is quite a simple algorithm and the results are a bit choppy
+ */
 static imgpngBasic *pixilateImage(imgpng *img, int scale) {
 	imgpngBasic *imgscaled = imgpngBasicCreate(img->width,
 			img->height);
 
-	png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL,
+			NULL);
 	imgscaled->rows = pngAllocRows(png_ptr, img->info, imgscaled->height);
 
 	png_byte *row;
 	png_byte *origrow;
 	png_byte *pixel;
 	png_byte *origpixel;
-
-	int avgR;
-	int avgG;
-	int avgB;
-	int avgA;
 
 	for (int y = 0; y < imgscaled->height; y+=scale) {
 		origrow = img->rows[y];
@@ -327,32 +330,78 @@ static imgpngBasic *pixilateImage(imgpng *img, int scale) {
 					pixel[A] = origpixel[A];
 				}
 			}
-
-			/*
-		for (int y2 = y; y2 < y + scale; ++y2) {
-			for (int x2 = x; x2 < x + scale; ++x2) {
-				origpixel = &(origrow[x2 * 4 * scale]);
-				avgR += origpixel[R];
-				avgG += origpixel[G];
-				avgB += origpixel[B];
-				avgA += origpixel[A];
-			}
 		}
-			origpixel = &(origrow[x * 4]);
-			avgR /= scale << 1;
-			avgG /= scale << 1;
-			avgB /= scale << 1;
-			avgA /= scale << 1;
+	}
 
-			for (int y2 = y; y2 < y + scale; ++y2) {
-				for (int x2 = x; x2 < x + scale; ++x2) {
-					pixel[R] = avgR;
-					pixel[G] = avgG;
-					pixel[B] = avgB;
-					pixel[A] = avgA;
+	return imgscaled;
+}
+
+/**
+ * NEW ALGO
+ *
+ *
+ * This is quite a simple algorithm and the results are a bit choppy
+ * https://stackoverflow.com/questions/15777821/how-can-i-pixelate-a-jpg-with-java */
+static imgpngBasic *pixilateImage2(imgpng *img, int scale) {
+	ihmap *hm = ihmapCreate(1 << 9);
+	imgpngBasic *imgscaled = imgpngBasicCreate(img->width,
+			img->height);
+
+	png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL,
+			NULL);
+	imgscaled->rows = pngAllocRows(png_ptr, img->info, imgscaled->height);
+
+	png_byte *row;
+	png_byte *origrow;
+	png_byte *pixel;
+	png_byte *origpixel;
+	hmapEntry *he;
+
+	for (int y = 0; y < imgscaled->height; y+=scale) {
+		origrow = img->rows[y];
+		for (int x = 0; x < imgscaled->width; x+=scale) {
+
+			int startx = x;
+			int starty = y;
+			int subimageWidth = scale;
+			int subimageHeight = scale;
+			int currentRGB = 0; // this is a hex colour
+			int count;
+
+			if (startx > imgscaled->width) startx = imgscaled->width;
+			if (starty > imgscaled->height) starty = imgscaled->height;
+			if ((startx + subimageWidth) > imgscaled->width) {
+				subimageWidth = imgscaled->width - startx;
+			}
+			if ((starty + subimageHeight) > imgscaled->height) {
+				subimageHeight = imgscaled->height - starty;
+			}
+
+			int sum = 0;
+			int sumR = 0;
+			int sumG = 0;
+			int sumB = 0;
+			for (int y2 = y; (y2 < y + scale) && y2 < imgscaled->height; ++y2) {
+				row = imgscaled->rows[y2];
+				for (int x2 = x; (x2 < x + scale) && x2 < imgscaled->width; ++x2) {
+					origpixel = &(origrow[x2 * 4]);
+					sumR += origpixel[R];
+					sumG += origpixel[G];
+					sumB += origpixel[B];
+					sum++;
 				}
 			}
-			*/
+
+			for (int y2 = y; (y2 < y + scale) && y2 < imgscaled->height; ++y2) {
+				row = imgscaled->rows[y2];
+				for (int x2 = x; (x2 < x + scale) && x2 < imgscaled->width; ++x2) {
+					pixel = &(row[x2 * 4]);
+					pixel[R] = sumR / sum;
+					pixel[G] = sumG / sum;
+					pixel[B] = sumB / sum;
+					pixel[A] = origpixel[A];
+				}
+			}
 		}
 	}
 
@@ -399,11 +448,22 @@ static void outfileName(char *outbuf, int width, int height, char *fileout) {
 	printf("%s\n", outbuf);
 }
 
+void imgpngColorise(imgpng *img, int pallete[][3], int paletteSize) {
+	imgpngBasic imgb;
+	imgb.height = img->height;
+	imgb.width = img->width;
+	imgb.rows = img->rows;
+	coloriseImage(&imgb, pallete, paletteSize);
+}
+
 void pngResizeImage(char *filename, char *fileout, int scale) {
 	char outbuf[BUFSIZ] = {'\0'};
 	imgpng *img = imgpngCreateFromFile(filename);
-	imgpngBasic *imgscaled = pixilateImage(img, 10);
-//	coloriseImage(imgscaled, examplePalette, 6);
+	//imgpngColorise(img, examplePalette, 4);
+	imgScaleImage(img, 8);
+//	imgEditFile(img);
+	imgpngBasic *imgscaled = pixilateImage(img, 15);
+	coloriseImage(imgscaled, examplePalette, 4);
 
 	outfileName(outbuf, imgscaled->width, imgscaled->height, fileout);
 	imgWriteToFile(imgscaled->width, imgscaled->height, imgscaled->rows,
