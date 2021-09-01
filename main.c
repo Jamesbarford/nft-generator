@@ -133,6 +133,45 @@ static imgpngBasic *pixilateImage(imgpng *img, int scale) {
 	return imgscaled;
 }
 
+
+static inline int computeSubRGBValues(int x, int y, int width, int height,
+		png_byte **rows, int scale)
+{
+	png_byte *origpixel;
+	png_byte *row;
+
+	int startx = x;
+	int starty = y;
+	int subimageWidth = scale;
+	int subimageHeight = scale;
+	int sumR = 0;
+	int sumG = 0;
+	int sumB = 0;
+	int sum = 0;
+
+	if (startx > width) startx = width;
+	if (starty > height) starty = height;
+	if ((startx + subimageWidth) > width) {
+		subimageWidth = width - startx;
+	}
+	if ((starty + subimageHeight) > height) {
+		subimageHeight = height - starty;
+	}
+
+	for (int y2 = y; (y2 < y + scale) && y2 < height; ++y2) {
+		row = rows[y2];
+		for (int x2 = x; (x2 < x + scale) && x2 < width; ++x2) {
+			origpixel = &(row[x2 * 4]);
+			sumR += origpixel[R];
+			sumG += origpixel[G];
+			sumB += origpixel[B];
+			sum++;
+		}
+	}
+
+	return (sumR / sum) << 16 | (sumG / sum) << 8 | sumB / sum;
+}
+
 /**
  * NEW ALGO
  *
@@ -145,51 +184,27 @@ static imgpngBasic *pixilateImage2(imgpng *img, int scale) {
 			NULL);
 	imgscaled->rows = pngAllocRows(png_ptr, img->info, imgscaled->height);
 
-	png_byte *row;
 	png_byte *origrow;
+	png_byte *row;
 	png_byte *pixel;
 	png_byte *origpixel;
+	int rgbSub = 0;
 
 	for (int y = 0; y < imgscaled->height; y+=scale) {
 		origrow = img->rows[y];
 		for (int x = 0; x < imgscaled->width; x+=scale) {
-
-			int startx = x;
-			int starty = y;
-			int subimageWidth = scale;
-			int subimageHeight = scale;
-			int sumR = 0;
-			int sumG = 0;
-			int sumB = 0;
-			int sum = 0;
-
-			if (startx > imgscaled->width) startx = imgscaled->width;
-			if (starty > imgscaled->height) starty = imgscaled->height;
-			if ((startx + subimageWidth) > imgscaled->width) {
-				subimageWidth = imgscaled->width - startx;
-			}
-			if ((starty + subimageHeight) > imgscaled->height) {
-				subimageHeight = imgscaled->height - starty;
-			}
-
-			for (int y2 = y; (y2 < y + scale) && y2 < imgscaled->height; ++y2) {
-				row = imgscaled->rows[y2];
-				for (int x2 = x; (x2 < x + scale) && x2 < imgscaled->width; ++x2) {
-					origpixel = &(origrow[x2 * 4]);
-					sumR += origpixel[R];
-					sumG += origpixel[G];
-					sumB += origpixel[B];
-					sum++;
-				}
-			}
+			origpixel = &(origrow[x * 4]);
+			
+			rgbSub = computeSubRGBValues(x, y, imgscaled->width, imgscaled->height,
+					img->rows, scale);
 
 			for (int y2 = y; (y2 < y + scale) && y2 < imgscaled->height; ++y2) {
 				row = imgscaled->rows[y2];
 				for (int x2 = x; (x2 < x + scale) && x2 < imgscaled->width; ++x2) {
 					pixel = &(row[x2 * 4]);
-					pixel[R] = sumR / sum;
-					pixel[G] = sumG / sum;
-					pixel[B] = sumB / sum;
+					pixel[R] = (rgbSub >> 16) & 0xFF;
+					pixel[G] = (rgbSub >> 8) & 0xFF;
+					pixel[B] = rgbSub & 0xFF;
 					pixel[A] = origpixel[A];
 				}
 			}
@@ -285,6 +300,71 @@ static void coloriseImage(imgpngBasic *imgb, int palette[][3], int paletteSize) 
 	}
 }
 
+/* this is much much closer*/
+static imgpngBasic *coloriseImage2(imgpng *img, int palette[][3], int paletteSize) {
+	imgpngBasic *imgscaled = imgpngBasicCreate(img->width,
+			img->height);
+
+	png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL,
+			NULL);
+	imgscaled->rows = pngAllocRows(png_ptr, img->info, imgscaled->height);
+
+	png_byte *origrow;
+	png_byte *row;
+	png_byte *pixel;
+	png_byte *origpixel;
+	int rgbSub = 0;
+	int *out;
+	int rgbarr[3];
+
+	for (int y = 0; y < imgscaled->height; y+=10) {
+		origrow = img->rows[y];
+		for (int x = 0; x < imgscaled->width; x+=10) {
+			origpixel = &(origrow[x * 4]);
+			
+			rgbSub = computeSubRGBValues(x, y, imgscaled->width, imgscaled->height,
+					img->rows, 20);
+
+			rgbarr[R] = (rgbSub >> 16) & 0xFF;
+			rgbarr[G] = (rgbSub >> 8) & 0xFF;
+			rgbarr[B] = rgbSub & 0xFF;
+
+			getSelectedColor(rgbarr, 3, palette, paletteSize, &out);
+
+			for (int y2 = y; (y2 < y + 20) && y2 < imgscaled->height; ++y2) {
+				row = imgscaled->rows[y2];
+				for (int x2 = x; (x2 < x + 20) && x2 < imgscaled->width; ++x2) {
+					pixel = &(row[x2 * 4]);
+					pixel[R] = out[R];
+					pixel[G] = out[G];
+					pixel[B] = out[B];
+					pixel[A] = origpixel[A];
+				}
+			}
+		}
+	}
+
+	return imgscaled;
+}
+
+void greyscaleImage(int width, int height, png_byte **rows) {
+	png_byte *row;
+	png_byte *pixel;
+	int avg;
+
+	for (int y = 0; y < height; ++y) {
+		row = rows[y];
+		for (int x = 0; x < width; ++x) {
+			pixel = &(row[x * 4]);
+			avg = pixel[R] + pixel[G] + pixel[B];
+			pixel[R] = avg;
+			pixel[G] = avg;
+			pixel[B] = avg;
+			pixel[A] = pixel[A];
+		}
+	}
+}
+
 static void outfileName(char *outbuf, int width, int height, char *fileout) {
 	char timebuf[24];
 	timestamp(timebuf);
@@ -304,18 +384,39 @@ void imgpngColorise(imgpng *img, int pallete[][3], int paletteSize) {
 
 void process(char *filename, char *fileout) {
 	char outbuf[BUFSIZ] = {'\0'};
-	imgpng *img = imgpngCreateFromFile(filename);
-	//imgpngColorise(img, examplePalette, 4);
-	imgScaleImage(img, 8);
-//	imgEditFile(img);
-	imgpngBasic *imgscaled = pixilateImage(img, 15);
-	coloriseImage(imgscaled, examplePalette, 4);
+	int width;
+	int height;
+	png_byte **rows;
 
-	outfileName(outbuf, imgscaled->width, imgscaled->height, fileout);
-	imgWriteToFile(imgscaled->width, imgscaled->height, imgscaled->rows,
+	imgpng *img = imgpngCreateFromFile(filename);
+	
+
+	imgScaleImage(img, 8);
+	
+
+	// greyscaleImage(img->width, img->height, img->rows);
+	// imgpngColorise(img, examplePalette, 4);
+	// imgEditFile(img);
+
+	width = img->width;
+	height = img->height;
+	rows = img->rows;
+
+	imgpngBasic *imgb = coloriseImage2(img, examplePalette, 4);
+	//imgb = pixilateImage2(img, 10);
+
+	width = imgb->width;
+	height = imgb->height;
+	rows = imgb->rows;
+
+
+//	coloriseImage(imgscaled, examplePalette, 4);
+
+	outfileName(outbuf, width, height, fileout);
+	imgWriteToFile(width, height, rows,
 			img->bitdepth, img->colortype, outbuf);
 	imgpngRelease(img);
-	imgpngBasicRelease(imgscaled);
+	imgpngBasicRelease(imgb);
 }
 
 int main(int argc, char **argv) {
