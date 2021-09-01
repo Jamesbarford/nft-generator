@@ -13,7 +13,9 @@ clean:
 	rm $(OUT)/*.o
 
 OBJS = $(OUT)/main.o \
-       $(OUT)/ihmap.o
+       $(OUT)/ihmap.o \
+       $(OUT)/panic.o \
+       $(OUT)/imgpng.o
 
 
 $(TARGET): $(OBJS)
@@ -21,8 +23,18 @@ $(TARGET): $(OBJS)
 
 $(OUT)/main.o: \
 	./main.c \
-	./ihmap.h
+	./ihmap.h \
+	./panic.h \
+	./imgpng.h
 
 $(OUT)/inthashmap.o: \
 	./ihmap.c \
 	./ihmap.h
+
+$(OUT)/panic.o: \
+	./panic.c \
+	./panic.h
+
+$(OUT)/imgpng.o: \
+	./imgpng.c \
+	./imgpng.h
