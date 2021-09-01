@@ -294,6 +294,7 @@ void imgEditFile(imgpng *img) {
 	}
 }
 
+/*https://stackoverflow.com/questions/15777821/how-can-i-pixelate-a-jpg-with-java*/
 static imgpngBasic *pixilateImage(imgpng *img, int scale) {
 	imgpngBasic *imgscaled = imgpngBasicCreate(img->width,
 			img->height);
