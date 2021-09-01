@@ -1,8 +1,9 @@
 #include <stdlib.h>
+#include <string.h>
 
-#include "ihmap.h"
+#include "hmap.h"
 
-void ihmapReleaseEntries(ihmap *hm) {
+void hmapReleaseEntries(hmap *hm) {
 	hmapEntry *he;
 	hmapEntry *next;
 
@@ -18,30 +19,23 @@ void ihmapReleaseEntries(ihmap *hm) {
 	}
 } 
 
-void ihmapClear(ihmap *hm) {
-	ihmapReleaseEntries(hm);
+void hmapClear(hmap *hm) {
+	hmapReleaseEntries(hm);
 	hm->entries = calloc(hm->capacity, sizeof(hmapEntry));
 }
 
-unsigned int hashKey(int x) {
-	x = ((x >> 16) ^ x) * 0x45d9f3b;
-	x = ((x >> 16) ^ x) * 0x45d9f3b;
-	x = (x >> 16) ^ x;
-	return x;
-}
-
-void ihmapRelease(ihmap *hm) {
+void hmapRelease(hmap *hm) {
 	if (hm) {
-		ihmapReleaseEntries(hm);
+		hmapReleaseEntries(hm);
 		free(hm->entries);
 		free(hm);
 	}
 }
 
-ihmap *ihmapCreate(int capacity) {
-	ihmap *hm;
+hmap *hmapCreate(int capacity) {
+	hmap *hm;
 
-	if ((hm = malloc(sizeof(ihmap))) == NULL)
+	if ((hm = malloc(sizeof(hmap))) == NULL)
 		return NULL;
 
 	hm->size = 0;
@@ -51,14 +45,28 @@ ihmap *ihmapCreate(int capacity) {
 	return hm;
 } 
 
-hmapEntry *ihmapGetValue(ihmap *hm, int key) {
+static inline unsigned int hashKey(const char *s) {
+	unsigned int h = (unsigned int)*s;
+	if (h) {
+		for (++s ; *s; ++s) {
+			h = (h << 5) - h + (unsigned int)*s;
+		}
+	}
+	return h;
+}
+
+static inline int keyCompare(int h1, char *k1, int h2, char *k2) {
+	return h1 == h2 && (strcmp(k1, k2) == 0);
+}
+
+hmapEntry *hmapGetValue(hmap *hm, char *key) {
 	hmapEntry *he;
 	unsigned int hash = hashKey(key);
 	unsigned int idx = hash & hm->mask;
 	he = hm->entries[idx];
 
 	while (he) {
-		if (he->key == key) {
+		if (keyCompare(hash, key, he->hash, he->key)) {
 			return he;
 		}
 		he = he->next;
@@ -67,12 +75,12 @@ hmapEntry *ihmapGetValue(ihmap *hm, int key) {
 	return NULL;
 }
 
-int ihmapSetValue(ihmap *hm, int key, int value) {
+int hmapSetValue(hmap *hm, char *key, void *value) {
 	unsigned int hash = hashKey(key);
 	unsigned int idx;
 	hmapEntry *he;
 
-	if ((he = ihmapGetValue(hm, key)) != NULL) {
+	if ((he = hmapGetValue(hm, key)) != NULL) {
 		he->value = value;
 		return 1;
 	}
@@ -83,6 +91,7 @@ int ihmapSetValue(ihmap *hm, int key, int value) {
 		idx = hash & hm->mask;
 		he->key = key;
 		he->value = value;
+		he->hash = hash;
 		he->next = hm->entries[idx];
 		hm->entries[idx] = he;
 		hm->size++;
@@ -91,7 +100,7 @@ int ihmapSetValue(ihmap *hm, int key, int value) {
 	return 1;
 }
 
-int ihmapGetNext(ihmapIterator *iter) {
+int hmapGetNext(hmapIterator *iter) {
 	unsigned int idx;
 	
 	while (iter->idx < iter->hm->capacity) {
@@ -112,10 +121,10 @@ int ihmapGetNext(ihmapIterator *iter) {
 	return 0;
 }
 
-ihmapIterator *ihmapCreateIterator(ihmap *hm) {
-	ihmapIterator *iter;
+hmapIterator *hmapCreateIterator(hmap *hm) {
+	hmapIterator *iter;
 
-	if ((iter = (ihmapIterator *)malloc(sizeof(ihmapIterator))) == NULL)
+	if ((iter = (hmapIterator *)malloc(sizeof(hmapIterator))) == NULL)
 		return NULL;
 
 	iter->idx = 0;
@@ -125,7 +134,7 @@ ihmapIterator *ihmapCreateIterator(ihmap *hm) {
 	return iter;
 }
 
-void ihmapReleaseIterator(ihmapIterator *iter) {
+void hmapReleaseIterator(hmapIterator *iter) {
 	if (iter) {
 		free(iter);
 	}

@@ -9,13 +9,16 @@ $(OUT)/%.o: %.c
 all: $(TARGET)
 
 clean:
-	rm $(TARGET)
 	rm $(OUT)/*.o
+	rm $(TARGET)
 
 OBJS = $(OUT)/main.o \
-       $(OUT)/ihmap.o \
        $(OUT)/panic.o \
-       $(OUT)/imgpng.o
+       $(OUT)/imgpng.o \
+			 $(OUT)/hmap.o \
+       $(OUT)/list.o \
+       $(OUT)/palettes.o \
+       $(OUT)/imageprocessing.o
 
 
 $(TARGET): $(OBJS)
@@ -23,13 +26,12 @@ $(TARGET): $(OBJS)
 
 $(OUT)/main.o: \
 	./main.c \
-	./ihmap.h \
 	./panic.h \
-	./imgpng.h
-
-$(OUT)/inthashmap.o: \
-	./ihmap.c \
-	./ihmap.h
+	./imgpng.h \
+	./imageprocessing.h \
+	./list.h \
+	./hmap.h \
+	./palettes.h
 
 $(OUT)/panic.o: \
 	./panic.c \
@@ -38,3 +40,22 @@ $(OUT)/panic.o: \
 $(OUT)/imgpng.o: \
 	./imgpng.c \
 	./imgpng.h
+
+$(OUT)/imageprocessing.o: \
+	./imageprocessing.c \
+	./imageprocessing.h \
+	./palettes.h
+
+$(OUT)/list.o: \
+	./list.c \
+	./list.h
+
+$(OUT)/palettes.o: \
+	./palettes.c \
+	./list.h \
+	./hmap.h \
+	./palettes.h
+
+$(OUT)/hmap.o: \
+	./hmap.c \
+	./hmap.h
