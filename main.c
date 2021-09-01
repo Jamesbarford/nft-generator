@@ -19,7 +19,7 @@ typedef  struct imgProcessOpts {
 } imgProcessOpts;
 
 
-void usage() {
+static void usage() {
 	printf("Usage:\n\t--file <filename> --out-file <out_filename> --block-size <int> --scale <int>\n\n"
 			"Where:\n"
 			"\t--file        the path to the input file\n"
@@ -58,7 +58,7 @@ static void outfileName(char *outbuf, int width, int height, char *fileout,
 }
 
 void process(imgProcessOpts *opts) {
-	hmap *palettes = colorPaletteCreate();
+	hmap *paletteMap = colorPaletteMapCreate();
 	hmapEntry *he;
 	colorPalette *palette;
 	char outbuf[BUFSIZ] = {'\0'};
@@ -71,9 +71,9 @@ void process(imgProcessOpts *opts) {
 
 	img = imgpngCreateFromFile(opts->filename);
 
-	for (unsigned int i = 0; i < palettes->size; ++i) {
+	for (unsigned int i = 0; i < paletteMap->size; ++i) {
 		snprintf(key, 4, "%d", i+1);
-		he = hmapGetValue(palettes, key);
+		he = hmapGetValue(paletteMap, key);
 		palette = he->value;
 
 		imgb = imgScaleImage(img, opts->scale);
@@ -89,7 +89,7 @@ void process(imgProcessOpts *opts) {
 		imgpngBasicRelease(imgb);
 	}
 
-	hmapRelease(palettes);
+	hmapRelease(paletteMap);
 	imgpngRelease(img);
 }
 

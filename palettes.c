@@ -149,6 +149,10 @@ static int palette8[][3] = {
   {255, 245, 247},
 };
 
+/**
+ * Convert the above structures into something a bit more c 
+ * friendly
+ */
 static colorPalette *allocPalette(int size, int palette[][3]) {
   colorPalette *p;
 
@@ -168,8 +172,24 @@ static colorPalette *allocPalette(int size, int palette[][3]) {
   return p;
 }
 
-hmap *colorPaletteCreate() {
-  hmap *hm = hmapCreate(1 << 5);
+/**
+ * Free both the contents of the palette and the 
+ * palette itself
+ */
+static void _colorPaletteRelease(void *_palette) {
+  colorPalette *palette = _palette;
+  for (int i = 0; i < palette->size; ++i) {
+    free(palette->colors[i]);
+  }
+  free(palette);
+}
+
+/**
+ * Instantiate a pretty big hashtable to ensure no collisions
+ */
+hmap *colorPaletteMapCreate() {
+  hmap *hm = hmapCreate(1 << 10);
+  hm->freeValue = _colorPaletteRelease;
 
 	hmapSetValue(hm, "1", allocPalette(8, palette1));
 	hmapSetValue(hm, "2", allocPalette(4, palette2));

@@ -4,6 +4,8 @@
 
 struct hmapEntry;
 
+typedef void hmapFreeValue(void *);
+
 typedef struct hmapEntry {
 	char *key;
 	void *value;
@@ -15,6 +17,7 @@ typedef struct hmap {
 	unsigned int size;
 	unsigned int capacity;
 	int mask;
+	hmapFreeValue *freeValue;
 	hmapEntry **entries;
 } hmap;
 

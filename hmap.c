@@ -8,13 +8,12 @@ void hmapReleaseEntries(hmap *hm) {
 	hmapEntry *next;
 
 	for (unsigned int i = 0; i < hm->capacity; ++i) {
-		he = hm->entries[i];
-		if (he != NULL) {
+		next = hm->entries[i];
+		while (next) {
+			he = next;
 			next = he->next;
-			while (next) {
-				next = he->next->next;
-				free(he->next);
-			}
+			if (hm->freeValue) hm->freeValue(he->value);
+			free(he);
 		}
 	}
 } 
@@ -32,6 +31,9 @@ void hmapRelease(hmap *hm) {
 	}
 }
 
+/**
+ * capacity MUST be a power of 2 else the behaviour is undefined
+ */
 hmap *hmapCreate(int capacity) {
 	hmap *hm;
 
@@ -55,6 +57,7 @@ static inline unsigned int hashKey(const char *s) {
 	return h;
 }
 
+/* compare hashes then keys */
 static inline int keyCompare(int h1, char *k1, int h2, char *k2) {
 	return h1 == h2 && (strcmp(k1, k2) == 0);
 }

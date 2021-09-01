@@ -8,6 +8,6 @@ typedef struct colorPalette {
 	int **colors;
 } colorPalette;
 
-hmap *colorPaletteCreate();
+hmap *colorPaletteMapCreate();
 
 #endif
