@@ -124,8 +124,7 @@ void processPixelImages(imgProcessOpts *opts) {
         }
     }
 
-    /* FIXME: the hashtable needs freeing but causes the program to crash*/
-    // hmapRelease(paletteMap);
+    hmapRelease(paletteMap);
     imgpngRelease(img);
 }
 

@@ -132,7 +132,7 @@ static colorPalette *allocPalette(int size, int palette[][3]) {
         return NULL;
 
     p->size = size;
-    p->colors = (int **)malloc(sizeof(int *));
+    p->colors = (int **)malloc(sizeof(int *) * size);
 
     for (int i = 0; i < size; ++i) {
         p->colors[i] = malloc(sizeof(int) * 3);
