@@ -4,8 +4,8 @@
 #include "hmap.h"
 
 typedef struct colorPalette {
-	int size;
-	int **colors;
+    int size;
+    int **colors;
 } colorPalette;
 
 hmap *colorPaletteMapCreate();

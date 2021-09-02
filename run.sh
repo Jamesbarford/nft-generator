@@ -1,13 +1,17 @@
 #!/usr/bin/bash
 
 createImages() {
-	for ((i=0; i < 20; ++i)); do
+	local filename=$1
+	if [ -z $filename ];
+		echo '$1 filename must be provided'
+	else 
 		./processpng.out \
-			--file ~/Downloads/oitmate.png \
-			--out-file "quality:${i}" \
-			--block-size $i \
+			--file $1 \
+			--out-file "quality" \
+			--from 1 \
+			--to 2 \
 			--scale 2
-	done
+	fi
 }
 
 createImages

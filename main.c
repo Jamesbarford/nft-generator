@@ -34,7 +34,8 @@ static void usage() {
            "\t--greyscale      optional, default is color for edge detection\n"
            "\t--color          optional, default is color for edge detection\n"
            "\t--edge-detection flag to use edge detection algorithm\n"
-           "\t--from           iteration to start from, applying a different blocksize at each increment\n"
+           "\t--from           iteration to start from, applying a different "
+           "blocksize at each increment\n"
            "\t--to             iteration to end\n"
            "\t--scale          optional resize the image\n"
            "\t--help           display this message"
@@ -70,19 +71,16 @@ static void outfileName(char *outbuf, int width, int height, char *fileout,
 }
 
 void writeRowsToFile(int width, int height, char *outname, png_byte **rows,
-        imgpng *original, int fileno)
-{
+                     imgpng *original, int fileno) {
     char outbuf[BUFSIZ] = {'\0'};
 
     outfileName(outbuf, width, height, outname, fileno);
     imgWriteToFile(width, height, rows, original->bitdepth, original->colortype,
                    outbuf);
-    
 }
 
 void generatePixlatedPngs(hmap *paletteMap, imgpng *original,
-        imgProcessOpts *opts, int blocksize)
-{
+                          imgProcessOpts *opts, int blocksize) {
     hmapEntry *he;
     colorPalette *palette;
     imgpngBasic *imgb;
@@ -98,7 +96,8 @@ void generatePixlatedPngs(hmap *paletteMap, imgpng *original,
 
         imgb = imgScaleImage(original, opts->scale);
 
-        coloriseImage2(imgb->width, imgb->height, imgb->rows, palette, blocksize);
+        coloriseImage2(imgb->width, imgb->height, imgb->rows, palette,
+                       blocksize);
         width = imgb->width;
         height = imgb->height;
         rows = imgb->rows;
@@ -126,8 +125,8 @@ void processPixelImages(imgProcessOpts *opts) {
     }
 
     /* FIXME: the hashtable needs freeing but causes the program to crash*/
-   // hmapRelease(paletteMap);
-   imgpngRelease(img);
+    // hmapRelease(paletteMap);
+    imgpngRelease(img);
 }
 
 void edgeDetection(imgProcessOpts *opts) {
@@ -146,7 +145,8 @@ void edgeDetection(imgProcessOpts *opts) {
     ie->gx = img3->rows;
     ie->gy = img4->rows;
 
-    sobelEdgeDetection(img->width, img->height, img->rows, ie, opts->colorflags);
+    sobelEdgeDetection(img->width, img->height, img->rows, ie,
+                       opts->colorflags);
 
     minMaxNoramlisation(ie->width, ie->height, ie->rows, opts->colorflags);
     greyscaleImage(ie->width, ie->height, ie->rows);

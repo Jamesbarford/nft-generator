@@ -7,7 +7,7 @@
 #include "imgpng.h"
 #include "panic.h"
 
-png_byte **pngAllocRows(png_struct * png_ptr, png_info *info, int height) {
+png_byte **pngAllocRows(png_struct *png_ptr, png_info *info, int height) {
     png_byte **rows;
     if ((rows = (png_byte **)malloc(sizeof(png_byte *) * height)) == NULL)
         return NULL;
@@ -25,7 +25,8 @@ void printPixel(int x, int y, png_byte *pixel) {
 }
 
 int imgpngAllocRows(imgpng *img) {
-    if ((img->rows = pngAllocRows(img->png_ptr, img->info, img->height)) == NULL) {
+    if ((img->rows = pngAllocRows(img->png_ptr, img->info, img->height)) ==
+        NULL) {
         return -1;
     }
     return 1;
@@ -54,7 +55,7 @@ imgpngBasic *imgpngDuplicate(imgpng *img) {
     imgb->rows = pngAllocRows(img->png_ptr, img->info, img->height);
 
     for (int y = 0; y < imgb->height; ++y) {
-       //  memcpy(imgb->rows, img->rows, sizeof(png_byte) * imgb->width);
+        //  memcpy(imgb->rows, img->rows, sizeof(png_byte) * imgb->width);
         for (int x = 0; imgb->width; ++x) {
             pxl = &(img->rows[y][x * 4]);
             duppxl = &(imgb->rows[y][x * 4]);
@@ -63,7 +64,6 @@ imgpngBasic *imgpngDuplicate(imgpng *img) {
             duppxl[2] = pxl[2];
             duppxl[3] = pxl[3];
         }
-    
     }
 
     printf("created\n");
@@ -109,7 +109,6 @@ imgEdge *imgEdgeCreate(imgpng *img) {
     ie->width = img->width;
     ie->height = img->height;
 
-
     png_byte **rows;
     png_byte **gx;
     png_byte **gy;
@@ -123,15 +122,15 @@ imgEdge *imgEdgeCreate(imgpng *img) {
     ie->rows = rows;
     ie->gx = gx;
     ie->gy = gy;
-    //ie->rows = pngAllocRows(img->png_ptr, img->info, ie->height);
-    //ie->gx   = pngAllocRows(img->png_ptr, img->info, ie->height);
-    //ie->gy   = pngAllocRows(img->png_ptr, img->info, ie->height);
+    // ie->rows = pngAllocRows(img->png_ptr, img->info, ie->height);
+    // ie->gx   = pngAllocRows(img->png_ptr, img->info, ie->height);
+    // ie->gy   = pngAllocRows(img->png_ptr, img->info, ie->height);
 
     return ie;
 }
 
 void imgEdgeRelease(imgEdge *ie) {
-   if (ie) {
+    if (ie) {
         imgpngRowsRelease(ie->height, ie->rows);
         imgpngRowsRelease(ie->height, ie->gx);
         imgpngRowsRelease(ie->height, ie->gy);
@@ -139,7 +138,7 @@ void imgEdgeRelease(imgEdge *ie) {
         free(ie->gx);
         free(ie->gy);
         free(ie);
-   } 
+    }
 }
 
 imgpng *imgpngCreateFromFile(char *file_name) {
@@ -231,10 +230,10 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
 
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during writing bytes");
-    
-   // png_set_rows(png_ptr, info_ptr, rows);
 
-   // png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+    // png_set_rows(png_ptr, info_ptr, rows);
+
+    // png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
     png_write_image(png_ptr, rows);
 
     if (setjmp(png_jmpbuf(png_ptr)))

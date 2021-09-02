@@ -18,8 +18,8 @@ static int sobelMX[3][3] = {
 
 static int sobelMY[3][3] = {
     {-1, -2, -1},
-    { 0,  0,  0},
-    { 1,  2,  1},
+    {0, 0, 0},
+    {1, 2, 1},
 };
 
 void imgEditFile(imgpng *img) {
@@ -319,8 +319,7 @@ void greyscaleImage(int width, int height, png_byte **rows) {
 
 /* Apply convolution  while on the fly getting greyscale values */
 static int applyConvolutionGreyscale(png_byte **rows, int kernal[3][3], int x,
-        int y)
-{
+                                     int y) {
     int acc = 0;
     int avg;
     png_byte *pxl;
@@ -338,8 +337,7 @@ static int applyConvolutionGreyscale(png_byte **rows, int kernal[3][3], int x,
 
 /* Apply a convolution to a given color channel */
 static int applyConvolutionColor(png_byte **rows, int kernal[3][3], int x,
-        int y, int rgb)
-{
+                                 int y, int rgb) {
     int acc = 0;
     png_byte *pxl;
 
@@ -359,20 +357,19 @@ static int applyConvolutionColor(png_byte **rows, int kernal[3][3], int x,
  * For each color chanel apply a convolution
  */
 static void sobelEdgeDetectionColor(int width, int height, png_byte **inrows,
-        imgEdge *ie)
-{
+                                    imgEdge *ie) {
     png_byte *pxl;
     png_byte *pxlgx;
     png_byte *pxlgy;
     png_byte *pxlorig;
 
-    for (int y = 0; y < height-2; ++y) {
-        for (int x = 0; x < width-2; ++x) {
+    for (int y = 0; y < height - 2; ++y) {
+        for (int x = 0; x < width - 2; ++x) {
             pxl = getPixel(ie->rows, y, x);
             pxlgx = getPixel(ie->gx, y, x);
             pxlgy = getPixel(ie->gy, y, x);
             pxlorig = getPixel(inrows, y, x);
-        
+
             pxlgx[R] = applyConvolutionColor(inrows, sobelMX, x, y, R);
             pxlgx[G] = applyConvolutionColor(inrows, sobelMX, x, y, G);
             pxlgx[B] = applyConvolutionColor(inrows, sobelMX, x, y, B);
@@ -384,19 +381,17 @@ static void sobelEdgeDetectionColor(int width, int height, png_byte **inrows,
             pxl[R] = (int)sqrt(pxlgx[R] * pxlgx[R] + pxlgy[R] + pxlgy[R]);
             pxl[G] = (int)sqrt(pxlgx[G] * pxlgx[G] + pxlgy[G] + pxlgy[G]);
             pxl[B] = (int)sqrt(pxlgx[B] * pxlgx[B] + pxlgy[B] + pxlgy[B]);
- 
-            pxl[A]   = pxlorig[A]; 
-            pxlgy[A] = pxlorig[A]; 
-            pxlgx[A] = pxlorig[A]; 
+
+            pxl[A] = pxlorig[A];
+            pxlgy[A] = pxlorig[A];
+            pxlgx[A] = pxlorig[A];
         }
     }
-
 }
 
 /* image must be greyscale BEFORE putting through this algorithm */
 static void sobelEdgeDetectionGreyscale(int width, int height,
-        png_byte **inrows, imgEdge *ie)
-{
+                                        png_byte **inrows, imgEdge *ie) {
     int gx;
     int gy;
     png_byte *pxl;
@@ -404,8 +399,8 @@ static void sobelEdgeDetectionGreyscale(int width, int height,
     png_byte *pxlgy;
     png_byte *pxlorig;
 
-    for (int y = 0; y < height-2; ++y) {
-        for (int x = 0; x < width-2; ++x) {
+    for (int y = 0; y < height - 2; ++y) {
+        for (int x = 0; x < width - 2; ++x) {
             pxl = getPixel(ie->rows, y, x);
             pxlgx = getPixel(ie->gx, y, x);
             pxlgy = getPixel(ie->gy, y, x);
@@ -414,24 +409,22 @@ static void sobelEdgeDetectionGreyscale(int width, int height,
             gx = applyConvolutionGreyscale(inrows, sobelMX, x, y);
             gy = applyConvolutionGreyscale(inrows, sobelMY, x, y);
 
-            setGreyscalePixel(pxl, sqrt(gx * gx + gy * gy)); 
-            setGreyscalePixel(pxlgx, gx); 
-            setGreyscalePixel(pxlgy, gy); 
+            setGreyscalePixel(pxl, sqrt(gx * gx + gy * gy));
+            setGreyscalePixel(pxlgx, gx);
+            setGreyscalePixel(pxlgy, gy);
 
-            pxl[A]   = pxlorig[A]; 
-            pxlgy[A] = pxlorig[A]; 
-            pxlgx[A] = pxlorig[A]; 
+            pxl[A] = pxlorig[A];
+            pxlgy[A] = pxlorig[A];
+            pxlgx[A] = pxlorig[A];
         }
     }
-
 }
 
 /**
  * Pick an edgeDetection algorithm based on flags
  */
-void sobelEdgeDetection(int width, int height, png_byte **inrows,
-        imgEdge *ie, int flags)
-{
+void sobelEdgeDetection(int width, int height, png_byte **inrows, imgEdge *ie,
+                        int flags) {
     if (flags & IMG_GREYSCALE)
         sobelEdgeDetectionGreyscale(width, height, inrows, ie);
     else if (flags & IMG_COLOR)
@@ -453,23 +446,28 @@ static void minMaxNoramlisationColor(int width, int height, png_byte **rows) {
 
     png_byte *px;
 
-
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             px = getPixel(rows, y, x);
-            
+
             curR = px[R];
             curG = px[G];
             curB = px[B];
 
-            if (curR < minR) minR = curR;
-            if (curR > maxR) maxR = curR;
+            if (curR < minR)
+                minR = curR;
+            if (curR > maxR)
+                maxR = curR;
 
-            if (curG < minG) minG = curG;
-            if (curG > maxG) maxG = curG;
+            if (curG < minG)
+                minG = curG;
+            if (curG > maxG)
+                maxG = curG;
 
-            if (curB < minB) minB = curB;
-            if (curB > maxB) maxB = curB;
+            if (curB < minB)
+                minB = curB;
+            if (curB > maxB)
+                maxB = curB;
         }
     }
 
@@ -477,16 +475,15 @@ static void minMaxNoramlisationColor(int width, int height, png_byte **rows) {
         for (int x = 0; x < width; ++x) {
             px = getPixel(rows, y, x);
 
-            px[R] = (int) (((int)(px[R] - minR) / (int)(maxR - minR)) * 255);
-            px[G] = (int) (((int)(px[G] - minG) / (int)(maxG - minG)) * 255);
-            px[B] = (int) (((int)(px[B] - minB) / (int)(maxB - minB)) * 255);
+            px[R] = (int)(((int)(px[R] - minR) / (int)(maxR - minR)) * 255);
+            px[G] = (int)(((int)(px[G] - minG) / (int)(maxG - minG)) * 255);
+            px[B] = (int)(((int)(px[B] - minB) / (int)(maxB - minB)) * 255);
         }
     }
 }
 
 static void minMaxNoramlisationGreyscale(int width, int height,
-        png_byte **rows)
-{
+                                         png_byte **rows) {
     int min = 1000000;
     int max = 0;
     int cur = 0;
@@ -497,8 +494,10 @@ static void minMaxNoramlisationGreyscale(int width, int height,
             px = getPixel(rows, y, x);
             cur = getGreyscalePixel(px);
 
-            if (cur < min) min = cur;
-            else if (cur > max) max = cur;
+            if (cur < min)
+                min = cur;
+            else if (cur > max)
+                max = cur;
         }
     }
 

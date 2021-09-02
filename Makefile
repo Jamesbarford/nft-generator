@@ -1,6 +1,6 @@
 TARGET := processpng.out
 CC     := cc
-CFLAGS := -Wall -Wextra -g -O2
+CFLAGS := -Wall -Wextra -g -O0
 OUT    := ./build
 
 $(OUT)/%.o: %.c
