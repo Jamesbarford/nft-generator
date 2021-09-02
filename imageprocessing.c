@@ -57,18 +57,13 @@ imgpngBasic *imgScaleImage(imgpng *img, int scale) {
         png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     imgbasic->rows = pngAllocRows(png_ptr, img->info, imgbasic->height);
 
-    png_byte *row;
-    png_byte *origrow;
     png_byte *pixel;
     png_byte *origpixel;
 
     for (int y = 0; y < imgbasic->height; ++y) {
-        row = imgbasic->rows[y];
-        origrow = img->rows[y * scale];
-
         for (int x = 0; x < imgbasic->width; ++x) {
-            pixel = &(row[x * 4]);
-            origpixel = &(origrow[x * 4 * scale]);
+            pixel = getPixel(imgbasic->rows, y, x);
+            origpixel = getPixel(img->rows, y, x * scale);
             assignRGB(pixel, origpixel);
             pixel[A] = origpixel[A];
         }
@@ -81,20 +76,16 @@ imgpngBasic *imgScaleImage(imgpng *img, int scale) {
  * This is quite a simple algorithm and the results are a bit choppy
  */
 void pixilateImage(int width, int height, png_byte **rows, int scale) {
-    png_byte *row;
-    png_byte *origrow;
     png_byte *pixel;
     png_byte *origpixel;
 
     for (int y = 0; y < height; y += scale) {
-        origrow = rows[y];
         for (int x = 0; x < width; x += scale) {
-            origpixel = &(origrow[x * 4]);
+            origpixel = getPixel(rows, y, x);
 
             for (int y2 = y; (y2 < y + scale) && y2 < height; ++y2) {
-                row = rows[y2];
                 for (int x2 = x; (x2 < x + scale) && x2 < width; ++x2) {
-                    pixel = &(row[x2 * 4]);
+                    pixel =getPixel(rows, y2, x2);;
                     assignRGB(pixel, origpixel);
                     pixel[A] = origpixel[A];
                 }
@@ -106,7 +97,6 @@ void pixilateImage(int width, int height, png_byte **rows, int scale) {
 static inline int computeSubRGBValues(int x, int y, int width, int height,
                                       png_byte **rows, int scale) {
     png_byte *origpixel;
-    png_byte *row;
 
     int startx = x;
     int starty = y;
@@ -129,9 +119,8 @@ static inline int computeSubRGBValues(int x, int y, int width, int height,
     }
 
     for (int y2 = y; (y2 < y + scale) && y2 < height; ++y2) {
-        row = rows[y2];
         for (int x2 = x; (x2 < x + scale) && x2 < width; ++x2) {
-            origpixel = &(row[x2 * 4]);
+            origpixel = getPixel(rows, y2, x2);
             sumR += origpixel[R];
             sumG += origpixel[G];
             sumB += origpixel[B];
@@ -148,23 +137,19 @@ static inline int computeSubRGBValues(int x, int y, int width, int height,
  * https://stackoverflow.com/questions/15777821/how-can-i-pixelate-a-jpg-with-java
  */
 void pixilateImage2(int width, int height, png_byte **rows, int scale) {
-    png_byte *origrow;
     png_byte *row;
     png_byte *pixel;
     png_byte *origpixel;
     int rgbSub = 0;
 
     for (int y = 0; y < height; y += scale) {
-        origrow = rows[y];
         for (int x = 0; x < width; x += scale) {
-            origpixel = &(origrow[x * 4]);
-
+            origpixel = getPixel(rows, y, x);
             rgbSub = computeSubRGBValues(x, y, width, height, rows, scale);
 
             for (int y2 = y; (y2 < y + scale) && y2 < height; ++y2) {
-                row = rows[y2];
                 for (int x2 = x; (x2 < x + scale) && x2 < width; ++x2) {
-                    pixel = &(row[x2 * 4]);
+                    pixel = getPixel(rows, y2, x2);
                     pixel[R] = (rgbSub >> 16) & 0xFF;
                     pixel[G] = (rgbSub >> 8) & 0xFF;
                     pixel[B] = rgbSub & 0xFF;
@@ -198,7 +183,6 @@ static void getSelectedColor(int *actualColors, int actualColorsSize,
         getSimilarColor(actualColors, actualColorsSize, palette->colors[0]);
     int next = 0;
     for (int i = 0; i < palette->size; ++i) {
-
         if ((next = getSimilarColor(actualColors, actualColorsSize,
                                     palette->colors[i])) <= cur) {
             *out = palette->colors[i];
@@ -209,17 +193,13 @@ static void getSelectedColor(int *actualColors, int actualColorsSize,
 
 void coloriseImage(int width, int height, png_byte **rows,
                    colorPalette *palette) {
-    png_byte *row;
     png_byte *pixel;
     // just to silence gcc
     int *out = {0};
 
     for (int y = 0; y < height; ++y) {
-        row = rows[y];
-
         for (int x = 0; x < width; ++x) {
-            pixel = &(row[x * 4]);
-
+            pixel = getPixel(rows, y, x);
             getSelectedColor((int *)pixel, 3, palette, &out);
             assignRGB(pixel, out);
             pixel[A] = pixel[A];
@@ -230,8 +210,6 @@ void coloriseImage(int width, int height, png_byte **rows,
 /* this is much much closer*/
 void coloriseImage2(int width, int height, png_byte **rows,
                     colorPalette *palette, int scale) {
-    png_byte *origrow;
-    png_byte *row;
     png_byte *pixel;
     png_byte *origpixel;
     int rgbSub = 0;
@@ -239,9 +217,8 @@ void coloriseImage2(int width, int height, png_byte **rows,
     int rgbarr[3];
 
     for (int y = 0; y < height; y += scale) {
-        origrow = rows[y];
         for (int x = 0; x < width; x += scale) {
-            origpixel = &(origrow[x * 4]);
+            origpixel = getPixel(rows, y, x);
 
             rgbSub = computeSubRGBValues(x, y, width, height, rows, scale);
 
@@ -252,9 +229,8 @@ void coloriseImage2(int width, int height, png_byte **rows,
             getSelectedColor(rgbarr, 3, palette, &out);
 
             for (int y2 = y; (y2 < y + scale) && y2 < height; ++y2) {
-                row = rows[y2];
                 for (int x2 = x; (x2 < x + scale) && x2 < width; ++x2) {
-                    pixel = &(row[x2 * 4]);
+                    pixel = getPixel(rows, y2, x2);
                     assignRGB(pixel, out);
                     pixel[A] = origpixel[A];
                 }
@@ -266,26 +242,22 @@ void coloriseImage2(int width, int height, png_byte **rows,
 /* this is much faster than the above and looks nicer */
 void coloriseImage3(int width, int height, png_byte **rows,
                     colorPalette *palette, int scale) {
-    png_byte *row;
-    png_byte *origrow;
     png_byte *pixel;
     png_byte *origpixel;
     int rgbarr[3];
     int *out;
 
     for (int y = 0; y < height; y += scale) {
-        origrow = rows[y];
         for (int x = 0; x < width; x += scale) {
-            origpixel = &(origrow[x * 4]);
+            origpixel = getPixel(rows, y, x);
 
             assignRGB(rgbarr, origpixel);
 
             getSelectedColor(rgbarr, 3, palette, &out);
 
             for (int y2 = y; (y2 < y + scale) && y2 < height; ++y2) {
-                row = rows[y2];
                 for (int x2 = x; (x2 < x + scale) && x2 < width; ++x2) {
-                    pixel = &(row[x2 * 4]);
+                    pixel = getPixel(rows, y2, x2);
                     assignRGB(pixel, out);
                     pixel[A] = origpixel[A];
                 }
