@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <png.h>
+#include <pngconf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,17 +17,27 @@ typedef struct imgProcessOpts {
     char *outname;
     int scale;
     int blockSize;
+    int colorflags;
+    int edgedetection;
+    int from;
+    int to;
 } imgProcessOpts;
 
 static void usage() {
     printf("Usage:\n\t--file <filename> --out-file <out_filename> --block-size "
            "<int> --scale <int>\n\n"
            "Where:\n"
-           "\t--file        the path to the input file\n"
-           "\t--out-file    a suffix preceeding .png\n"
-           "\t--block-size  optional the size of the pixel effect\n"
-           "\t--scale       optional resize the image\n"
-           "\t--help        display this message"
+           "\t--file           the path to the input file\n"
+           "\t--out-file       a suffix preceeding .png\n"
+           "\t--block-size     optional the size of the pixel effect\n"
+           "\t--scale          optional resize the image\n"
+           "\t--greyscale      optional, default is color for edge detection\n"
+           "\t--color          optional, default is color for edge detection\n"
+           "\t--edge-detection flag to use edge detection algorithm\n"
+           "\t--from           iteration to start from, applying a different blocksize at each increment\n"
+           "\t--to             iteration to end\n"
+           "\t--scale          optional resize the image\n"
+           "\t--help           display this message"
            "\n");
 }
 
@@ -58,41 +69,93 @@ static void outfileName(char *outbuf, int width, int height, char *fileout,
     printf("%s\n", outbuf);
 }
 
-void process(imgProcessOpts *opts) {
-    hmap *paletteMap = colorPaletteMapCreate();
+void writeRowsToFile(int width, int height, char *outname, png_byte **rows,
+        imgpng *original, int fileno)
+{
+    char outbuf[BUFSIZ] = {'\0'};
+
+    outfileName(outbuf, width, height, outname, fileno);
+    imgWriteToFile(width, height, rows, original->bitdepth, original->colortype,
+                   outbuf);
+    
+}
+
+void generatePixlatedPngs(hmap *paletteMap, imgpng *original,
+        imgProcessOpts *opts, int blocksize)
+{
     hmapEntry *he;
     colorPalette *palette;
-    char outbuf[BUFSIZ] = {'\0'};
+    imgpngBasic *imgb;
+    char key[4] = {'\0'};
     int width;
     int height;
-    char key[4] = {'\0'};
     png_byte **rows;
-    imgpng *img;
-    imgpngBasic *imgb;
-
-    img = imgpngCreateFromFile(opts->filename);
 
     for (unsigned int i = 0; i < paletteMap->size; ++i) {
         snprintf(key, 4, "%d", i + 1);
         he = hmapGetValue(paletteMap, key);
         palette = he->value;
 
-        imgb = imgScaleImage(img, opts->scale);
+        imgb = imgScaleImage(original, opts->scale);
 
-        coloriseImage2(imgb->width, imgb->height, imgb->rows, palette,
-                       opts->blockSize);
+        coloriseImage2(imgb->width, imgb->height, imgb->rows, palette, blocksize);
         width = imgb->width;
         height = imgb->height;
         rows = imgb->rows;
 
-        outfileName(outbuf, width, height, opts->outname, i);
-        imgWriteToFile(width, height, rows, img->bitdepth, img->colortype,
-                       outbuf);
+        writeRowsToFile(width, height, opts->outname, rows, original, i);
         imgpngBasicRelease(imgb);
     }
+}
 
-    hmapRelease(paletteMap);
-    imgpngRelease(img);
+/**
+ * Either were generating a range of images  or just one
+ * This is here as it is extremely slow to loop over this programme in bash
+ */
+void processPixelImages(imgProcessOpts *opts) {
+    hmap *paletteMap = colorPaletteMapCreate();
+    imgpng *img = imgpngCreateFromFile(opts->filename);
+
+    if (opts->from == 0 && opts->to == 1) {
+        generatePixlatedPngs(paletteMap, img, opts, opts->blockSize);
+    } else {
+        printf("hammertime\n");
+        for (int blocksize = opts->from; blocksize < opts->to; ++blocksize) {
+            generatePixlatedPngs(paletteMap, img, opts, blocksize);
+        }
+    }
+
+    /* FIXME: the hashtable needs freeing but causes the program to crash*/
+   // hmapRelease(paletteMap);
+   imgpngRelease(img);
+}
+
+void edgeDetection(imgProcessOpts *opts) {
+    imgpng *img = imgpngCreateFromFile(opts->filename);
+    imgpng *img2 = imgpngCreateFromFile(opts->filename);
+    imgpng *img3 = imgpngCreateFromFile(opts->filename);
+    imgpng *img4 = imgpngCreateFromFile(opts->filename);
+
+    greyscaleImage(img->width, img->height, img->rows);
+    greyscaleImage(img->width, img->height, img2->rows);
+    greyscaleImage(img->width, img->height, img3->rows);
+    greyscaleImage(img->width, img->height, img4->rows);
+
+    imgEdge *ie = imgEdgeCreate(img);
+    ie->rows = img2->rows;
+    ie->gx = img3->rows;
+    ie->gy = img4->rows;
+
+    sobelEdgeDetection(img->width, img->height, img->rows, ie, opts->colorflags);
+
+    minMaxNoramlisation(ie->width, ie->height, ie->rows, opts->colorflags);
+    greyscaleImage(ie->width, ie->height, ie->rows);
+    greyscaleImage(ie->width, ie->height, ie->gx);
+    greyscaleImage(ie->width, ie->height, ie->gy);
+
+    writeRowsToFile(img->width, img->height, opts->outname, ie->rows, img, 1);
+    writeRowsToFile(img->width, img->height, opts->outname, ie->gx, img, 2);
+    writeRowsToFile(img->width, img->height, opts->outname, ie->gy, img, 3);
 }
 
 int main(int argc, char **argv) {
@@ -100,6 +163,10 @@ int main(int argc, char **argv) {
     opts.blockSize = 12;
     opts.scale = 2;
     opts.filename = "no_file";
+    opts.colorflags = IMG_COLOR;
+    opts.edgedetection = 0;
+    opts.from = 0;
+    opts.to = 1;
 
     for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], "--file") == 0) {
@@ -110,6 +177,16 @@ int main(int argc, char **argv) {
             opts.scale = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--block-size") == 0) {
             opts.blockSize = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--greyscale") == 0) {
+            opts.colorflags = IMG_GREYSCALE;
+        } else if (strcmp(argv[i], "--color") == 0) {
+            opts.colorflags = IMG_COLOR;
+        } else if (strcmp(argv[i], "--edge-detection") == 0) {
+            opts.edgedetection = 1;
+        } else if (strcmp(argv[i], "--from") == 0) {
+            opts.from = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--to") == 0) {
+            opts.to = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--help") == 0) {
             usage();
             exit(EXIT_SUCCESS);
@@ -121,6 +198,10 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    process(&opts);
+    if (opts.edgedetection == 1)
+        edgeDetection(&opts);
+    else {
+        processPixelImages(&opts);
+    }
     return 0;
 }

@@ -7,13 +7,14 @@
 #include "imgpng.h"
 #include "panic.h"
 
-png_byte **pngAllocRows(png_struct *png_ptr, png_info *info_ptr, int height) {
+png_byte **pngAllocRows(png_struct * png_ptr, png_info *info, int height) {
     png_byte **rows;
     if ((rows = (png_byte **)malloc(sizeof(png_byte *) * height)) == NULL)
         return NULL;
 
-    for (int y = 0; y < height; y++)
-        rows[y] = (png_byte *)malloc(png_get_rowbytes(png_ptr, info_ptr));
+    for (int y = 0; y < height; y++) {
+        rows[y] = (png_byte *)malloc(png_get_rowbytes(png_ptr, info));
+    }
 
     return rows;
 }
@@ -22,9 +23,9 @@ void printPixel(int x, int y, png_byte *pixel) {
     printf("[%d, %d] rgba(%d, %d, %d, %d)\n", x, y, pixel[R], pixel[G],
            pixel[B], pixel[A]);
 }
+
 int imgpngAllocRows(imgpng *img) {
-    if ((img->rows = pngAllocRows(img->png_ptr, img->info, img->height)) ==
-        NULL) {
+    if ((img->rows = pngAllocRows(img->png_ptr, img->info, img->height)) == NULL) {
         return -1;
     }
     return 1;
@@ -40,6 +41,33 @@ imgpng *imgpngCreate() {
     img->height = 0;
     img->width = 0;
     return img;
+}
+
+imgpngBasic *imgpngDuplicate(imgpng *img) {
+    imgpngBasic *imgb;
+    png_byte *duppxl;
+    png_byte *pxl;
+
+    if ((imgb = imgpngBasicCreate(img->width, img->height)) == NULL)
+        return NULL;
+
+    imgb->rows = pngAllocRows(img->png_ptr, img->info, img->height);
+
+    for (int y = 0; y < imgb->height; ++y) {
+       //  memcpy(imgb->rows, img->rows, sizeof(png_byte) * imgb->width);
+        for (int x = 0; imgb->width; ++x) {
+            pxl = &(img->rows[y][x * 4]);
+            duppxl = &(imgb->rows[y][x * 4]);
+            duppxl[0] = pxl[0];
+            duppxl[1] = pxl[1];
+            duppxl[2] = pxl[2];
+            duppxl[3] = pxl[3];
+        }
+    
+    }
+
+    printf("created\n");
+    return imgb;
 }
 
 void imgpngRowsRelease(int height, png_byte **rows) {
@@ -72,6 +100,46 @@ void imgpngBasicRelease(imgpngBasic *imgb) {
         imgpngRowsRelease(imgb->height, imgb->rows);
         free(imgb);
     }
+}
+
+imgEdge *imgEdgeCreate(imgpng *img) {
+    imgEdge *ie;
+    if ((ie = (imgEdge *)malloc(sizeof(imgEdge))) == NULL)
+        return NULL;
+    ie->width = img->width;
+    ie->height = img->height;
+
+
+    png_byte **rows;
+    png_byte **gx;
+    png_byte **gy;
+    if ((rows = (png_byte **)malloc(sizeof(png_byte *) * img->height)) == NULL)
+        return NULL;
+    if ((gx = (png_byte **)malloc(sizeof(png_byte *) * img->height)) == NULL)
+        return NULL;
+    if ((gy = (png_byte **)malloc(sizeof(png_byte *) * img->height)) == NULL)
+        return NULL;
+
+    ie->rows = rows;
+    ie->gx = gx;
+    ie->gy = gy;
+    //ie->rows = pngAllocRows(img->png_ptr, img->info, ie->height);
+    //ie->gx   = pngAllocRows(img->png_ptr, img->info, ie->height);
+    //ie->gy   = pngAllocRows(img->png_ptr, img->info, ie->height);
+
+    return ie;
+}
+
+void imgEdgeRelease(imgEdge *ie) {
+   if (ie) {
+        imgpngRowsRelease(ie->height, ie->rows);
+        imgpngRowsRelease(ie->height, ie->gx);
+        imgpngRowsRelease(ie->height, ie->gy);
+        free(ie->rows);
+        free(ie->gx);
+        free(ie->gy);
+        free(ie);
+   } 
 }
 
 imgpng *imgpngCreateFromFile(char *file_name) {
@@ -150,6 +218,8 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during init_io");
 
+    png_init_io(png_ptr, fp);
+
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during writing header");
 
@@ -157,14 +227,15 @@ void imgWriteToFile(int width, int height, png_byte **rows, png_byte bitdepth,
                  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE,
                  PNG_FILTER_TYPE_BASE);
 
-    png_set_rows(png_ptr, info_ptr, rows);
-    png_init_io(png_ptr, fp);
     png_write_info(png_ptr, info_ptr);
 
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during writing bytes");
+    
+   // png_set_rows(png_ptr, info_ptr, rows);
 
-    png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+   // png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+    png_write_image(png_ptr, rows);
 
     if (setjmp(png_jmpbuf(png_ptr)))
         panic("Write Error: during end of write");
