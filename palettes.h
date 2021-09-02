@@ -9,5 +9,6 @@ typedef struct colorPalette {
 } colorPalette;
 
 hmap *colorPaletteMapCreate();
+int hexToRGB(char *hex);
 
 #endif

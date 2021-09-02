@@ -59,16 +59,32 @@ static int hexTable(char c) {
     return 0;
 }
 
-int hexToRGBArray(char *hex, int *rgbArray) {
+/**
+ * Sets an int to rgb values
+ * #FFBBAA;
+ * R = num << 16; #FF0000
+ * G = num << 12; #00BB00
+ * B = num;       #0000AA
+ *
+ * To extract:
+ * R = (rgb >> 16) & 0xFF;
+ * G = (rgb >> 12) & 0xFF;
+ * B = rgb & 0xFF;
+ */
+int hexToRGB(char *hex) {
+    printf("%s\n", hex);
+    int rgb = 0;
     if (strlen(hex) != 7 && hex[0] != '#') {
         return -1;
     }
 
-    rgbArray[0] = (hexTable(hex[1]) << 4) | hexTable(hex[2]);
-    rgbArray[1] = (hexTable(hex[3]) << 4) | hexTable(hex[4]);
-    rgbArray[2] = (hexTable(hex[5]) << 4) | hexTable(hex[6]);
-    return 1;
+    rgb |= ((hexTable(hex[1]) << 4) | hexTable(hex[2])) << 16;
+    rgb |= ((hexTable(hex[3]) << 4) | hexTable(hex[4])) << 12;
+    rgb |=  (hexTable(hex[5]) << 4) | hexTable(hex[6]);
+
+    return rgb;
 }
+
 static int palette1[][3] = {
     {13, 43, 69},   {32, 60, 86},   {84, 78, 104},   {141, 105, 122},
     {208, 129, 89}, {255, 170, 94}, {255, 212, 163}, {255, 236, 214},

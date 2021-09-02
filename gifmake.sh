@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-convert -delay 10 -loop 0 *.png out.gif
+convert -delay 12 -loop 0 ./david/*.png out.gif

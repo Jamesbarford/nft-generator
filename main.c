@@ -21,6 +21,8 @@ typedef struct imgProcessOpts {
     int edgedetection;
     int from;
     int to;
+    int mixchannels;
+    int rgbvalues;
 } imgProcessOpts;
 
 static void usage() {
@@ -157,13 +159,29 @@ void edgeDetection(imgProcessOpts *opts) {
     writeRowsToFile(img->width, img->height, opts->outname, ie->gy, img, 3);
 }
 
+void mixChannels(imgProcessOpts *opts) {
+    if (opts->rgbvalues == 0) {
+        panic("To mix rbg values please supply a hex value eg: #FFBBAA\n");
+    }
+    imgpng *img = imgpngCreateFromFile(opts->filename);
+    imgpngBasic *imgb = imgScaleImage(img, opts->scale);
+    imgpngMixChannelsCustom(imgb->width, imgb->height, imgb->rows,
+            opts->rgbvalues);
+    printf("mixing\n");
+    
+    writeRowsToFile(imgb->width, imgb->height, opts->outname, imgb->rows, img, 1);
+}
+
 int main(int argc, char **argv) {
     imgProcessOpts opts;
     opts.blockSize = 12;
     opts.scale = 2;
     opts.filename = "no_file";
+    opts.outname = "no_file";
     opts.colorflags = IMG_COLOR;
     opts.edgedetection = 0;
+    opts.mixchannels = 0;
+    opts.rgbvalues = 0;
     opts.from = 0;
     opts.to = 1;
 
@@ -186,20 +204,30 @@ int main(int argc, char **argv) {
             opts.from = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--to") == 0) {
             opts.to = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--mix-channels") == 0) {
+            opts.mixchannels = 1;
+        } else if (strcmp(argv[i], "--hex-value") == 0) {
+            opts.rgbvalues = hexToRGB(argv[++i]);
         } else if (strcmp(argv[i], "--help") == 0) {
             usage();
             exit(EXIT_SUCCESS);
         }
     }
 
-    if (strcmp(opts.filename, "no_file") == 0) {
+    if (strcmp(opts.filename, "no_file") == 0 ||
+            strcmp(opts.filename, "no_file") == 0) {
         usage();
         exit(EXIT_FAILURE);
     }
 
-    if (opts.edgedetection == 1)
+    if (opts.mixchannels == 1) {
+        mixChannels(&opts);
+        return 0;
+    } 
+    if (opts.edgedetection == 1) {
         edgeDetection(&opts);
-    else {
+        return 0;
+    } else {
         processPixelImages(&opts);
     }
     return 0;

@@ -22,18 +22,27 @@ static int sobelMY[3][3] = {
     {1, 2, 1},
 };
 
-void imgEditFile(imgpng *img) {
-    colourCheck(img);
-
-    png_byte *row;
+void imgpngMixChannels(int width, int height, png_byte **rows) {
     png_byte *pixel;
-    for (int y = 0; y < img->height; y++) {
-        row = img->rows[y];
 
-        for (int x = 0; x < img->width; x++) {
-            pixel = &(row[x * 4]);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            pixel = getPixel(rows, y, x);
             pixel[R] = 120;
             pixel[G] = pixel[B];
+        }
+    }
+}
+
+void imgpngMixChannelsCustom(int width, int height, png_byte **rows, int rgb) {
+    png_byte *pixel;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            pixel = getPixel(rows, y, x);
+            pixel[R] = ((rgb >> 16) & 0xFF) | pixel[R];
+            pixel[G] = ((rgb >> 12) & 0xFF) | pixel[G];
+            pixel[B] = (rgb & 0xFF) | pixel[B];
         }
     }
 }
@@ -61,9 +70,10 @@ imgpngBasic *imgScaleImage(imgpng *img, int scale) {
     png_byte *origpixel;
 
     for (int y = 0; y < imgbasic->height; ++y) {
+        png_byte *row = img->rows[y * scale];
         for (int x = 0; x < imgbasic->width; ++x) {
             pixel = getPixel(imgbasic->rows, y, x);
-            origpixel = getPixel(img->rows, y, x * scale);
+            origpixel = &(row[x * 4 * scale]);
             assignRGB(pixel, origpixel);
             pixel[A] = origpixel[A];
         }

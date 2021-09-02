@@ -7,7 +7,8 @@
 #define IMG_GREYSCALE 1
 #define IMG_COLOR 2
 
-void imgEditFile(imgpng *img);
+void imgpngMixChannels(int width, int height, png_byte **rows);
+void imgpngMixChannelsCustom(int width, int height, png_byte **rows, int rgb);
 
 void imgpngBasicInit(imgpng *img, imgpngBasic *imgb, int scale);
 /**
