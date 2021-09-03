@@ -35,25 +35,25 @@ void imgpngMixChannels(int width, int height, png_byte **rows) {
 }
 
 /**
- * We go over the array diagonally, this is nice if we want to apply stripes.
- * Or create a gif that has a nice flowy effect
+ * Apply a user defined colour change to each pixel
  */
 void imgpngMixChannelsCustom(int width, int height, png_byte **rows, int rgb) {
     png_byte *pixel;
 
-    for (int y = 0; y <= (height + width) - 2; ++y) {
-        for (int x = 0; x <= y; ++x) {
-            int i = y - x;
-            if (i < height && x < width) {
-                pixel = getPixel(rows, i, x);
-                pixel[R] = ((rgb >> 16) & 0xFF) | pixel[R];
-                pixel[G] = ((rgb >> 12) & 0xFF) | pixel[G];
-                pixel[B] = (rgb & 0xFF) | pixel[B]; 
-            }
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            pixel = getPixel(rows, y, x);
+            pixel[R] = ((rgb >> 16) & 0xFF) | pixel[R];
+            pixel[G] = ((rgb >> 12) & 0xFF) | pixel[G];
+            pixel[B] = (rgb & 0xFF) | pixel[B];
         }
     }
 }
 
+/**
+ * We go over the array diagonally, this is nice if we want to apply stripes.
+ * Or create a gif that has a nice flowy effect
+ */
 void imgpngMixChannelsUntilHeight(int width, int height, png_byte **rows,
         int rgb, int untilHeight)
 {
@@ -74,21 +74,25 @@ void imgpngMixChannelsUntilHeight(int width, int height, png_byte **rows,
 }
 
 /**
- * Layer pngs on the largest image which is assumed to be the first.
+ * Layer pngs on top of eachother, the largest is used as the base image.
+ * If the images are all of the same resolution make sure they are passed in
+ * the order you want them in for them to layer properly.
  */
-void imgpngMerge(int width, int height, imgpng **imgs, int imgCount) {
+void imgpngMerge(int width, int height, imgpng **imgs, int imgCount,
+        int largest)
+{
     png_byte *pixel;
     png_byte *basepxl;
 
     for (int i = 1; i < imgCount; ++i) {
-        for (int y = 0; y < imgs[i]->height; ++y) {
-            for (int x = 0; x < imgs[i]->width; ++x) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
                 pixel = getPixel(imgs[i]->rows, y, x);
-                basepxl = getPixel(imgs[0]->rows, y, x);
+                basepxl = getPixel(imgs[largest]->rows, y, x);
                 basepxl[R] = pixel[R];
                 basepxl[G] = pixel[G];
                 basepxl[B] = pixel[B];
-                basepxl[A] = 90;//pixel[A];
+                basepxl[A] = pixel[A];
             }
         }
     } 
@@ -152,7 +156,8 @@ void pixilateImage(int width, int height, png_byte **rows, int scale) {
 }
 
 static inline int computeSubRGBValues(int x, int y, int width, int height,
-                                      png_byte **rows, int scale) {
+        png_byte **rows, int scale)
+{
     png_byte *origpixel;
 
     int startx = x;
@@ -194,7 +199,6 @@ static inline int computeSubRGBValues(int x, int y, int width, int height,
  * https://stackoverflow.com/questions/15777821/how-can-i-pixelate-a-jpg-with-java
  */
 void pixilateImage2(int width, int height, png_byte **rows, int scale) {
-    png_byte *row;
     png_byte *pixel;
     png_byte *origpixel;
     int rgbSub = 0;
@@ -218,7 +222,8 @@ void pixilateImage2(int width, int height, png_byte **rows, int scale) {
 }
 
 static int getSimilarColor(int *rgbColors, int rgbColorSize,
-                           int *comparitorColor) {
+        int *comparitorColor)
+{
     int similar = 0;
     for (int i = 0; i < rgbColorSize; ++i) {
         similar += (rgbColors[i] - comparitorColor[i]) *
@@ -235,7 +240,8 @@ static int getSimilarColor(int *rgbColors, int rgbColorSize,
  * **out is a pointer to an int array
  */
 static void getSelectedColor(int *actualColors, int actualColorsSize,
-                             colorPalette *palette, int **out) {
+        colorPalette *palette, int **out)
+{
     int cur =
         getSimilarColor(actualColors, actualColorsSize, palette->colors[0]);
     int next = 0;
@@ -249,7 +255,8 @@ static void getSelectedColor(int *actualColors, int actualColorsSize,
 }
 
 void coloriseImage(int width, int height, png_byte **rows,
-                   colorPalette *palette) {
+        colorPalette *palette)
+{
     png_byte *pixel;
     // just to silence gcc
     int *out = {0};
@@ -266,7 +273,8 @@ void coloriseImage(int width, int height, png_byte **rows,
 
 /* this is much much closer*/
 void coloriseImage2(int width, int height, png_byte **rows,
-                    colorPalette *palette, int scale) {
+        colorPalette *palette, int scale)
+{
     png_byte *pixel;
     png_byte *origpixel;
     int rgbSub = 0;
@@ -298,7 +306,8 @@ void coloriseImage2(int width, int height, png_byte **rows,
 
 /* this is much faster than the above and looks nicer */
 void coloriseImage3(int width, int height, png_byte **rows,
-                    colorPalette *palette, int scale) {
+        colorPalette *palette, int scale)
+{
     png_byte *pixel;
     png_byte *origpixel;
     int rgbarr[3];
@@ -348,7 +357,8 @@ void greyscaleImage(int width, int height, png_byte **rows) {
 
 /* Apply convolution  while on the fly getting greyscale values */
 static int applyConvolutionGreyscale(png_byte **rows, int kernal[3][3], int x,
-                                     int y) {
+        int y)
+{
     int acc = 0;
     int avg;
     png_byte *pxl;
@@ -366,7 +376,8 @@ static int applyConvolutionGreyscale(png_byte **rows, int kernal[3][3], int x,
 
 /* Apply a convolution to a given color channel */
 static int applyConvolutionColor(png_byte **rows, int kernal[3][3], int x,
-                                 int y, int rgb) {
+        int y, int rgb)
+{
     int acc = 0;
     png_byte *pxl;
 
@@ -386,7 +397,8 @@ static int applyConvolutionColor(png_byte **rows, int kernal[3][3], int x,
  * For each color chanel apply a convolution
  */
 static void sobelEdgeDetectionColor(int width, int height, png_byte **inrows,
-                                    imgEdge *ie) {
+        imgEdge *ie)
+{
     png_byte *pxl;
     png_byte *pxlgx;
     png_byte *pxlgy;
@@ -420,7 +432,8 @@ static void sobelEdgeDetectionColor(int width, int height, png_byte **inrows,
 
 /* image must be greyscale BEFORE putting through this algorithm */
 static void sobelEdgeDetectionGreyscale(int width, int height,
-                                        png_byte **inrows, imgEdge *ie) {
+        png_byte **inrows, imgEdge *ie)
+{
     int gx;
     int gy;
     png_byte *pxl;
@@ -453,7 +466,8 @@ static void sobelEdgeDetectionGreyscale(int width, int height,
  * Pick an edgeDetection algorithm based on flags
  */
 void sobelEdgeDetection(int width, int height, png_byte **inrows, imgEdge *ie,
-                        int flags) {
+        int flags)
+{
     if (flags & IMG_GREYSCALE)
         sobelEdgeDetectionGreyscale(width, height, inrows, ie);
     else if (flags & IMG_COLOR)
@@ -512,7 +526,8 @@ static void minMaxNoramlisationColor(int width, int height, png_byte **rows) {
 }
 
 static void minMaxNoramlisationGreyscale(int width, int height,
-                                         png_byte **rows) {
+        png_byte **rows)
+{
     int min = 1000000;
     int max = 0;
     int cur = 0;

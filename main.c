@@ -33,6 +33,7 @@ static void usage() {
            "<int> --scale <int>\n\n"
            "Where:\n"
            "\t--file           the path to the input file\n"
+           "\t--merge          comma separated list of files to merge\n\n"
            "\t--out-file       a suffix preceeding .png\n"
            "\t--block-size     optional the size of the pixel effect\n"
            "\t--scale          optional resize the image\n"
@@ -44,7 +45,6 @@ static void usage() {
            "\t--to             iteration to end\n"
            "\t--scale          optional resize the image\n"
            "\t--help           display this message"
-           "\t--merge          comma separated list of files to merge"
            "\n");
 }
 
@@ -66,7 +66,8 @@ static void timestamp(char *timebuf) {
 }
 
 static void outfileName(char *outbuf, int width, int height, char *fileout,
-                        int number) {
+                        int number)
+{
     char timebuf[72];
     timestamp(timebuf);
 
@@ -77,7 +78,8 @@ static void outfileName(char *outbuf, int width, int height, char *fileout,
 }
 
 void writeRowsToFile(int width, int height, char *outname, png_byte **rows,
-                     imgpng *original, int fileno) {
+                     imgpng *original, int fileno)
+{
     char outbuf[BUFSIZ] = {'\0'};
 
     outfileName(outbuf, width, height, outname, fileno);
@@ -86,7 +88,8 @@ void writeRowsToFile(int width, int height, char *outname, png_byte **rows,
 }
 
 void generatePixlatedPngs(hmap *paletteMap, imgpng *original,
-                          imgProcessOpts *opts, int blocksize) {
+        imgProcessOpts *opts, int blocksize)
+{
     hmapEntry *he;
     colorPalette *palette;
     imgpngBasic *imgb;
@@ -161,8 +164,18 @@ void edgeDetection(imgProcessOpts *opts) {
     writeRowsToFile(img->width, img->height, opts->outname, ie->rows, img, 1);
     writeRowsToFile(img->width, img->height, opts->outname, ie->gx, img, 2);
     writeRowsToFile(img->width, img->height, opts->outname, ie->gy, img, 3);
+
+    imgpngRelease(img);
+    imgpngRelease(img2);
+    imgpngRelease(img3);
+    imgpngRelease(img4);
+    imgEdgeRelease(ie);
 }
 
+/**
+ * Diagonally colours an image using a hex value in steps.
+ * Can then be combined to make a gif.
+ */
 void mixChannels(imgProcessOpts *opts) {
     if (opts->rgbvalues == 0) {
         panic("To mix rbg values please supply a hex value eg: #FFBBAA\n");
@@ -179,8 +192,13 @@ void mixChannels(imgProcessOpts *opts) {
         writeRowsToFile(imgb->width, imgb->height, opts->outname, imgb->rows, img, iter);
         ++iter;
     }
+    imgpngRelease(img);
+    imgpngBasicRelease(imgb);
 }
 
+/**
+ * Layers pngs on top of eachother. Ideally they will all be of the same resolution 
+ */
 void mergeFiles(imgProcessOpts *opts) {
     cstr **arr = opts->files->arr;
     imgpng **imgpngArr = malloc(sizeof(imgpng *) * opts->files->size);
@@ -199,12 +217,17 @@ void mergeFiles(imgProcessOpts *opts) {
 
     height = imgpngArr[largest]->height;
     width = imgpngArr[largest]->width;
-    imgpngMerge(width, height, imgpngArr, opts->files->size);
-
+    imgpngMerge(width, height, imgpngArr, opts->files->size, largest);
     writeRowsToFile(width, height, opts->outname, imgpngArr[largest]->rows,
             imgpngArr[largest], 1);
+
+    for (int i = 0; i < opts->files->size; ++i) {
+        imgpngRelease(imgpngArr[i]);
+    }
+    free(imgpngArr);
 }
 
+/* default behaviour is to pixilate an image with and colour it */
 int main(int argc, char **argv) {
     imgProcessOpts opts;
     opts.blockSize = 12;
@@ -218,6 +241,7 @@ int main(int argc, char **argv) {
     opts.from = 0;
     opts.to = 1;
     opts.files = NULL;
+    opts.merge = 0;
 
     for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], "--file") == 0) {
@@ -251,16 +275,16 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (strcmp(opts.filename, "no_file") == 0 ||
-            strcmp(opts.filename, "no_file") == 0) {
-        usage();
-        exit(EXIT_FAILURE);
-    }
-
     if (opts.merge == 1) {
         mergeFiles(&opts);
         cstrArrayRelease(opts.files);
         return 0;
+    }
+
+    if (strcmp(opts.filename, "no_file") == 0 ||
+            strcmp(opts.filename, "no_file") == 0) {
+        usage();
+        exit(EXIT_FAILURE);
     }
 
     if (opts.mixchannels == 1) {

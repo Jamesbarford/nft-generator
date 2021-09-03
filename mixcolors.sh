@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-for ((i=0; i < 100; ++i)); do
+for ((i=0; i < 30; ++i)); do
 	./processpng.out \
-		--file /run/media/jwmbe/SPARE/toprocess/forzip/done_statues/alexander_great_head.png \
+		--file /run/media/jwmbe/SPARE/toprocess/forzip/done_statues/aphrodite_1.png \
 		--hex-value $(./genranhex.py) \
 		--out-file "foo${i}" \
 		--mix-channels \

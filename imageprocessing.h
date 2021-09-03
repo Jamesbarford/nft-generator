@@ -12,7 +12,8 @@ void imgpngMixChannelsCustom(int width, int height, png_byte **rows, int rgb);
 void imgpngMixChannelsUntilHeight(int width, int height, png_byte **rows,
         int rgb, int untilHeight);
 
-void imgpngMerge(int width, int height, imgpng **imgs, int imgCount);
+void imgpngMerge(int width, int height, imgpng **imgs, int imgCount,
+                int largest);
 
 void imgpngBasicInit(imgpng *img, imgpngBasic *imgb, int scale);
 /**
