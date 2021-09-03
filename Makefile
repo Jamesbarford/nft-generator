@@ -1,6 +1,6 @@
 TARGET := processpng.out
 CC     := cc
-CFLAGS := -Wall -Wextra -g -O0
+CFLAGS := -Wall -Wextra -O2
 OUT    := ./build
 
 $(OUT)/%.o: %.c
@@ -17,8 +17,8 @@ OBJS = $(OUT)/main.o \
        $(OUT)/imgpng.o \
 			 $(OUT)/hmap.o \
        $(OUT)/palettes.o \
-       $(OUT)/imageprocessing.o
-
+       $(OUT)/imageprocessing.o \
+       $(OUT)/cstr.o
 
 $(TARGET): $(OBJS)
 	$(CC) -o $(TARGET) $(OBJS) -lpng -lm
@@ -29,6 +29,7 @@ $(OUT)/main.o: \
 	./imgpng.h \
 	./imageprocessing.h \
 	./hmap.h \
+	./cstr.h \
 	./palettes.h
 
 $(OUT)/panic.o: \
@@ -52,3 +53,7 @@ $(OUT)/palettes.o: \
 $(OUT)/hmap.o: \
 	./hmap.c \
 	./hmap.h
+
+$(OUT)/cstr.o: \
+	./cstr.c \
+	./cstr.h

@@ -34,17 +34,64 @@ void imgpngMixChannels(int width, int height, png_byte **rows) {
     }
 }
 
+/**
+ * We go over the array diagonally, this is nice if we want to apply stripes.
+ * Or create a gif that has a nice flowy effect
+ */
 void imgpngMixChannelsCustom(int width, int height, png_byte **rows, int rgb) {
     png_byte *pixel;
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            pixel = getPixel(rows, y, x);
-            pixel[R] = ((rgb >> 16) & 0xFF) | pixel[R];
-            pixel[G] = ((rgb >> 12) & 0xFF) | pixel[G];
-            pixel[B] = (rgb & 0xFF) | pixel[B];
+    for (int y = 0; y <= (height + width) - 2; ++y) {
+        for (int x = 0; x <= y; ++x) {
+            int i = y - x;
+            if (i < height && x < width) {
+                pixel = getPixel(rows, i, x);
+                pixel[R] = ((rgb >> 16) & 0xFF) | pixel[R];
+                pixel[G] = ((rgb >> 12) & 0xFF) | pixel[G];
+                pixel[B] = (rgb & 0xFF) | pixel[B]; 
+            }
         }
     }
+}
+
+void imgpngMixChannelsUntilHeight(int width, int height, png_byte **rows,
+        int rgb, int untilHeight)
+{
+    png_byte *pixel;
+    for (int y = 0; y <= (height + width) - 2; ++y) {
+        for (int x = 0; x <= y; ++x) {
+            int i = y - x;
+            if (i < height && x < width) {
+                pixel = getPixel(rows, i, x);
+                pixel[R] = ((rgb >> 16) & 0xFF) | pixel[R];
+                pixel[G] = ((rgb >> 12) & 0xFF) | pixel[G];
+                pixel[B] = (rgb & 0xFF) | pixel[B]; 
+            }
+            if (i == untilHeight) return;
+        }
+    }
+    
+}
+
+/**
+ * Layer pngs on the largest image which is assumed to be the first.
+ */
+void imgpngMerge(int width, int height, imgpng **imgs, int imgCount) {
+    png_byte *pixel;
+    png_byte *basepxl;
+
+    for (int i = 1; i < imgCount; ++i) {
+        for (int y = 0; y < imgs[i]->height; ++y) {
+            for (int x = 0; x < imgs[i]->width; ++x) {
+                pixel = getPixel(imgs[i]->rows, y, x);
+                basepxl = getPixel(imgs[0]->rows, y, x);
+                basepxl[R] = pixel[R];
+                basepxl[G] = pixel[G];
+                basepxl[B] = pixel[B];
+                basepxl[A] = 90;//pixel[A];
+            }
+        }
+    } 
 }
 
 void imgpngBasicInit(imgpng *img, imgpngBasic *imgbasic, int scale) {

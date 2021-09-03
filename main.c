@@ -11,6 +11,7 @@
 #include "imgpng.h"
 #include "palettes.h"
 #include "panic.h"
+#include "cstr.h"
 
 typedef struct imgProcessOpts {
     char *filename;
@@ -23,6 +24,8 @@ typedef struct imgProcessOpts {
     int to;
     int mixchannels;
     int rgbvalues;
+    int merge;
+    cstrArray *files;
 } imgProcessOpts;
 
 static void usage() {
@@ -41,6 +44,7 @@ static void usage() {
            "\t--to             iteration to end\n"
            "\t--scale          optional resize the image\n"
            "\t--help           display this message"
+           "\t--merge          comma separated list of files to merge"
            "\n");
 }
 
@@ -165,11 +169,40 @@ void mixChannels(imgProcessOpts *opts) {
     }
     imgpng *img = imgpngCreateFromFile(opts->filename);
     imgpngBasic *imgb = imgScaleImage(img, opts->scale);
-    imgpngMixChannelsCustom(imgb->width, imgb->height, imgb->rows,
-            opts->rgbvalues);
-    printf("mixing\n");
-    
-    writeRowsToFile(imgb->width, imgb->height, opts->outname, imgb->rows, img, 1);
+    int dim = imgb->width + imgb->height;
+    int incr = (dim / 30);
+    int iter = 10;
+
+    for (int i = incr; i < imgb->width + imgb->height; i += incr) {
+        imgpngMixChannelsUntilHeight(imgb->width, imgb->height, imgb->rows,
+                opts->rgbvalues, i);
+        writeRowsToFile(imgb->width, imgb->height, opts->outname, imgb->rows, img, iter);
+        ++iter;
+    }
+}
+
+void mergeFiles(imgProcessOpts *opts) {
+    cstr **arr = opts->files->arr;
+    imgpng **imgpngArr = malloc(sizeof(imgpng *) * opts->files->size);
+    int area = 0;
+    int largest = 0;
+    int height = 0;
+    int width = 0;
+
+    for (int i = 0; i < opts->files->size; ++i) {
+        imgpngArr[i] = imgpngCreateFromFile(arr[i]->buf);
+        if (imgpngArr[i]->height * imgpngArr[i]->width > area) {
+            area = imgpngArr[i]->height * imgpngArr[i]->width;
+            largest = i;
+        }
+    }
+
+    height = imgpngArr[largest]->height;
+    width = imgpngArr[largest]->width;
+    imgpngMerge(width, height, imgpngArr, opts->files->size);
+
+    writeRowsToFile(width, height, opts->outname, imgpngArr[largest]->rows,
+            imgpngArr[largest], 1);
 }
 
 int main(int argc, char **argv) {
@@ -184,6 +217,7 @@ int main(int argc, char **argv) {
     opts.rgbvalues = 0;
     opts.from = 0;
     opts.to = 1;
+    opts.files = NULL;
 
     for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], "--file") == 0) {
@@ -208,6 +242,9 @@ int main(int argc, char **argv) {
             opts.mixchannels = 1;
         } else if (strcmp(argv[i], "--hex-value") == 0) {
             opts.rgbvalues = hexToRGB(argv[++i]);
+        } else if (strcmp(argv[i], "--merge") == 0) {
+            opts.files = cstrSplit(',', argv[++i]);
+            opts.merge = 1;
         } else if (strcmp(argv[i], "--help") == 0) {
             usage();
             exit(EXIT_SUCCESS);
@@ -218,6 +255,12 @@ int main(int argc, char **argv) {
             strcmp(opts.filename, "no_file") == 0) {
         usage();
         exit(EXIT_FAILURE);
+    }
+
+    if (opts.merge == 1) {
+        mergeFiles(&opts);
+        cstrArrayRelease(opts.files);
+        return 0;
     }
 
     if (opts.mixchannels == 1) {
