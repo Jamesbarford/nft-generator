@@ -2,7 +2,7 @@
 
 for ((i=0; i < 30; ++i)); do
 	./processpng.out \
-		--file /run/media/jwmbe/SPARE/toprocess/forzip/done_statues/aphrodite_1.png \
+		--file ./layered_man/complete/man_pouring_water_computer_genisis.png \
 		--hex-value $(./genranhex.py) \
 		--out-file "foo${i}" \
 		--mix-channels \

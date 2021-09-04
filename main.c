@@ -178,7 +178,7 @@ void edgeDetection(imgProcessOpts *opts) {
  */
 void mixChannels(imgProcessOpts *opts) {
     if (opts->rgbvalues == 0) {
-        panic("To mix rbg values please supply a hex value eg: #FFBBAA\n");
+        panic("To mix rbg values please supply a hex value eg: --hex-value '#FFBBAA'\n");
     }
     imgpng *img = imgpngCreateFromFile(opts->filename);
     imgpngBasic *imgb = imgScaleImage(img, opts->scale);
@@ -186,12 +186,17 @@ void mixChannels(imgProcessOpts *opts) {
     int incr = (dim / 30);
     int iter = 10;
 
+    /*
+    imgpngMixChannelsCustom(img->width, img->height, img->rows, opts->rgbvalues);
+    writeRowsToFile(img->width, img->height, opts->outname, img->rows, img, iter);
+    */
     for (int i = incr; i < imgb->width + imgb->height; i += incr) {
         imgpngMixChannelsUntilHeight(imgb->width, imgb->height, imgb->rows,
                 opts->rgbvalues, i);
         writeRowsToFile(imgb->width, imgb->height, opts->outname, imgb->rows, img, iter);
         ++iter;
     }
+    
     imgpngRelease(img);
     imgpngBasicRelease(imgb);
 }
@@ -276,6 +281,7 @@ int main(int argc, char **argv) {
     }
 
     if (opts.merge == 1) {
+        cstrArrayPrint(opts.files);
         mergeFiles(&opts);
         cstrArrayRelease(opts.files);
         return 0;

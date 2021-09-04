@@ -8,9 +8,8 @@ createImages() {
 		./processpng.out \
 			--file $1 \
 			--out-file "quality" \
-			--from 1 \
-			--to 20 \
-			--scale 2
+			--scale 2 \
+			--block-size 3
 	fi
 }
 

@@ -22,6 +22,13 @@ static int sobelMY[3][3] = {
     {1, 2, 1},
 };
 
+static inline int isNullPixel(png_byte *pixel) {
+    return pixel[R] == 255 &&
+           pixel[G] == 255 &&
+           pixel[B] == 255 &&
+           pixel[A] == 0 ? 1 : 0;
+}
+
 void imgpngMixChannels(int width, int height, png_byte **rows) {
     png_byte *pixel;
 
@@ -70,7 +77,6 @@ void imgpngMixChannelsUntilHeight(int width, int height, png_byte **rows,
             if (i == untilHeight) return;
         }
     }
-    
 }
 
 /**
@@ -84,17 +90,19 @@ void imgpngMerge(int width, int height, imgpng **imgs, int imgCount,
     png_byte *pixel;
     png_byte *basepxl;
 
-    for (int i = 1; i < imgCount; ++i) {
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
+    for (int i = 0; i < imgCount; ++i) {
+        for (int y = 0; y < imgs[i]->height; ++y) {
+            for (int x = 0; x < imgs[i]->width; ++x) {
                 pixel = getPixel(imgs[i]->rows, y, x);
                 basepxl = getPixel(imgs[largest]->rows, y, x);
+                if (pixel[A] == 0) continue;
                 basepxl[R] = pixel[R];
                 basepxl[G] = pixel[G];
                 basepxl[B] = pixel[B];
                 basepxl[A] = pixel[A];
             }
         }
+
     } 
 }
 
