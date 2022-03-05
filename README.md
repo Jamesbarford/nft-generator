@@ -5,7 +5,7 @@ contribution to clogging up opensea's databases.
 
 Before ($unsellable)             |  After $1,000,000
 :-------------------------:|:-------------------------:
-<img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/alexander_great_head.png" width="350" /> | <img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/out.gif" width="350" />
+<img src="https://github.com/Jamesbarford/nft-generator/blob/main/examples/alexander_great_head.png" width="350" /> | <img src="https://github.com/Jamesbarford/nft-generator/blob/main/examples/out.gif" width="350" />
 
 
 ## Features:
