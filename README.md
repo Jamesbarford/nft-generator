@@ -3,7 +3,8 @@
 Create `n` number of slightly pixliated images that would make a nice
 contribution to clogging up opensea's databases.
 
-![alt text](https://github.com/Jamesbarford/image-processing/examples/out.gif "Example gif")
+<img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/out.gif" width="400" />
+
 
 ## Features:
 - [x] Edge detection
