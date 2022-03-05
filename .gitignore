@@ -1,8 +1,12 @@
+.vscode
 *.out
 build
-*.png
 .DS_Store
 *.swo
 *.swp
-.gif
+./src/*.gif
+./src/*.png
 *.o
+nftgen
+*.png
+*.gif
