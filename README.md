@@ -1,9 +1,10 @@
 # NFT Generator (Image manipulation program)
 
-Create `n` number of slightly pixliated images that would make a nice
-contribution to clogging up opensea's databases.
+Fancy buying a super yacht but are lacking in finances? This aims to fix that.
+Create `n` number of slightly modified images that would make a nice
+contribution to opensea's databases.
 
-Before ($unsellable)             |  After $1,000,000
+Before ($unsellable)             |  After $1,000,000 (appx)
 :-------------------------:|:-------------------------:
 <img src="https://github.com/Jamesbarford/nft-generator/blob/main/examples/alexander_great_head.png" width="350" /> | <img src="https://github.com/Jamesbarford/nft-generator/blob/main/examples/out.gif" width="350" />
 
@@ -43,3 +44,11 @@ make
 # Usage:
 The best way to get to grips with this is play around with some images and see
 what happens.
+
+## Disclaimer
+
+This is joke and just for fun, I was interested in experimenting with images
+and pixel manipulation. I'd strongly advise against trying to sell anything
+created by this program on opensea as listing something on the website will
+set you back a couple hundred pounds. Though if you do and make millions,
+I'd be like the program to be mentioned :).
