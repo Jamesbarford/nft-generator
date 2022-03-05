@@ -1,4 +1,4 @@
-TARGET := processpng.out
+TARGET := nftgen
 CC     := cc
 CFLAGS := -Wall -Wextra -Wpedantic -Werror -O2
 OUT    := .
