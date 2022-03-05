@@ -25,10 +25,11 @@ typedef struct imgProcessOpts {
     int mixchannels;
     int rgbvalues;
     int merge;
-    cstrArray *files;
+    cstr **files;
+    int file_count;
 } imgProcessOpts;
 
-static void usage() {
+static void usage(void) {
     printf("Usage:\n\t--file <filename> --out-file <out_filename> --block-size "
            "<int> --scale <int>\n\n"
            "Where:\n"
@@ -205,15 +206,15 @@ void mixChannels(imgProcessOpts *opts) {
  * Layers pngs on top of eachother. Ideally they will all be of the same resolution 
  */
 void mergeFiles(imgProcessOpts *opts) {
-    cstr **arr = opts->files->arr;
-    imgpng **imgpngArr = malloc(sizeof(imgpng *) * opts->files->size);
+    cstr **arr = opts->files;
+    imgpng **imgpngArr = malloc(sizeof(imgpng *) * opts->file_count);
     int area = 0;
     int largest = 0;
     int height = 0;
     int width = 0;
 
-    for (int i = 0; i < opts->files->size; ++i) {
-        imgpngArr[i] = imgpngCreateFromFile(arr[i]->buf);
+    for (int i = 0; i < opts->file_count; ++i) {
+        imgpngArr[i] = imgpngCreateFromFile(arr[i]);
         if (imgpngArr[i]->height * imgpngArr[i]->width > area) {
             area = imgpngArr[i]->height * imgpngArr[i]->width;
             largest = i;
@@ -222,11 +223,11 @@ void mergeFiles(imgProcessOpts *opts) {
 
     height = imgpngArr[largest]->height;
     width = imgpngArr[largest]->width;
-    imgpngMerge(width, height, imgpngArr, opts->files->size, largest);
+    imgpngMerge(width, height, imgpngArr, opts->file_count, largest);
     writeRowsToFile(width, height, opts->outname, imgpngArr[largest]->rows,
             imgpngArr[largest], 1);
 
-    for (int i = 0; i < opts->files->size; ++i) {
+    for (int i = 0; i < opts->file_count; ++i) {
         imgpngRelease(imgpngArr[i]);
     }
     free(imgpngArr);
@@ -247,6 +248,7 @@ int main(int argc, char **argv) {
     opts.to = 1;
     opts.files = NULL;
     opts.merge = 0;
+    opts.file_count = 0;
 
     for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], "--file") == 0) {
@@ -272,7 +274,7 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "--hex-value") == 0) {
             opts.rgbvalues = hexToRGB(argv[++i]);
         } else if (strcmp(argv[i], "--merge") == 0) {
-            opts.files = cstrSplit(',', argv[++i]);
+            opts.files = cstrSplit(argv[++i], ',', &opts.file_count);
             opts.merge = 1;
         } else if (strcmp(argv[i], "--help") == 0) {
             usage();
@@ -281,9 +283,8 @@ int main(int argc, char **argv) {
     }
 
     if (opts.merge == 1) {
-        cstrArrayPrint(opts.files);
         mergeFiles(&opts);
-        cstrArrayRelease(opts.files);
+        cstrArrayRelease(opts.files, opts.file_count);
         return 0;
     }
 

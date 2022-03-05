@@ -173,9 +173,9 @@ static void _colorPaletteRelease(void *_palette) {
 }
 
 /**
- * Instantiate a pretty big hashtable to ensure no collisions
+ * Instantiate a pretty big hashtable
  */
-hmap *colorPaletteMapCreate() {
+hmap *colorPaletteMapCreate(void) {
     hmap *hm = hmapCreate(1 << 10);
     hm->freeValue = _colorPaletteRelease;
 
