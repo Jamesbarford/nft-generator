@@ -4,6 +4,8 @@ Fancy buying a super yacht but are lacking in finances? This aims to fix that.
 Create `n` number of slightly modified images that would make a nice
 contribution to opensea's databases.
 
+_only works on png files for the time being_
+
 Before ($unsellable)             |  After $1,000,000 (appx)
 :-------------------------:|:-------------------------:
 <img src="https://github.com/Jamesbarford/nft-generator/blob/main/examples/alexander_great_head.png" width="350" /> | <img src="https://github.com/Jamesbarford/nft-generator/blob/main/examples/out.gif" width="350" />
