@@ -13,6 +13,8 @@
 #include "panic.h"
 #include "cstr.h"
 
+static char *progname;
+
 typedef struct imgProcessOpts {
     char *filename;
     char *outname;
@@ -30,23 +32,26 @@ typedef struct imgProcessOpts {
 } imgProcessOpts;
 
 static void usage(void) {
-    printf("Usage:\n\t--file <filename> --out-file <out_filename> --block-size "
-           "<int> --scale <int>\n\n"
+    printf("Usage:\n  %s --file <filename> [OPTIONS]\n\n"
            "Where:\n"
-           "\t--file           the path to the input file\n"
-           "\t--merge          comma separated list of files to merge\n\n"
-           "\t--out-file       a suffix preceeding .png\n"
-           "\t--block-size     optional the size of the pixel effect\n"
-           "\t--scale          optional resize the image\n"
-           "\t--greyscale      optional, default is color for edge detection\n"
-           "\t--color          optional, default is color for edge detection\n"
-           "\t--edge-detection flag to use edge detection algorithm\n"
-           "\t--from           iteration to start from, applying a different "
+           "  --file <string>      Path to the input file\n"
+           "  --merge <string>     Comma separated list of files to merge\n"
+           "  --out-file <string>  A suffix preceeding .png\n"
+           "  --block-size <int>   Optional the size of the pixel effect\n"
+           "  --scale <int>        Optional resize the image\n"
+           "  --from <int>         Iteration to start from, applying a different "
            "blocksize at each increment\n"
-           "\t--to             iteration to end\n"
-           "\t--scale          optional resize the image\n"
-           "\t--help           display this message"
-           "\n");
+           "  --to <int>           Iteration to end\n\n"
+           "Flags:\n"
+           "  --greyscale          Optional, default is colour for edge detection\n"
+           "  --color              Optional, default is colour for edge detection\n"
+           "  --edge-detection     Use edge detection algorithm\n\n"
+           "Chanel Mixing:\n"
+           "  --mix-channels       Flag: mix colour chanels\n"
+           "  --hex-value <string> RGB values to mix in e.g: #FFBBAA\n\n"
+
+           "  --help               Display this message"
+           "\n", progname);
 }
 
 static void timestamp(char *timebuf) {
@@ -249,6 +254,7 @@ int main(int argc, char **argv) {
     opts.files = NULL;
     opts.merge = 0;
     opts.file_count = 0;
+    progname = argv[0];
 
     for (int i = 0; i < argc; ++i) {
         if (strcmp(argv[i], "--file") == 0) {
