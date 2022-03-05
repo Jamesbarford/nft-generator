@@ -7,7 +7,7 @@ createImages() {
 		return
 	fi
 
-	./processpng.out \
+	./src/nftgen \
 		--file $1 \
 		--out-file "quality" \
 		--scale 2 \
