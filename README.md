@@ -3,6 +3,8 @@
 Create `n` number of slightly pixliated images that would make a nice
 contribution to clogging up opensea's databases.
 
+![alt text](https://github.com/Jamesbarford/image-processing/examples/out.gif "Example gif")
+
 ## Features:
 - [x] Edge detection
 - [x] Pixilating images
@@ -34,3 +36,7 @@ After installing the dependencies:
 ```sh
 make
 ```
+
+# Usage:
+The best way to get to grips with this is play around with some images and see
+what happens.
