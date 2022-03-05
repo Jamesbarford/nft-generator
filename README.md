@@ -3,8 +3,9 @@
 Create `n` number of slightly pixliated images that would make a nice
 contribution to clogging up opensea's databases.
 
-<img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/alexander_great_head.png" width="400" />
-<img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/out.gif" width="400" />
+Before ($unsellable)             |  After $1,000,000
+:-------------------------:|:-------------------------:
+<img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/alexander_great_head.png" width="350" /> | <img src="https://github.com/Jamesbarford/image-processing/blob/main/examples/out.gif" width="350" />
 
 
 ## Features:
