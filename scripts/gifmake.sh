@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Create a gif by layering some pictures
+
 file=$1
 
 if [ -z $file ]; then

@@ -87,6 +87,8 @@ void imgpngMixChannelsUntilHeight(int width, int height, png_byte **rows,
 void imgpngMerge(int width, int height, imgpng **imgs, int imgCount,
         int largest)
 {
+    (void)width;
+    (void)height;
     png_byte *pixel;
     png_byte *basepxl;
 

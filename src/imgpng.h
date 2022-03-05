@@ -36,7 +36,7 @@ typedef struct imgEdge {
 void printPixel(int x, int y, png_byte *pixel);
 int imgpngAllocRows(imgpng *img);
 
-imgpng *imgpngCreate();
+imgpng *imgpngCreate(void);
 imgpng *imgpngCreateFromFile(char *file_name);
 
 void imgpngRelease(imgpng *img);

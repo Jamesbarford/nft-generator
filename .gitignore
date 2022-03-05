@@ -5,3 +5,4 @@ build
 *.swo
 *.swp
 *.gif
+*.o
