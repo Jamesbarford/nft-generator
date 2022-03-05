@@ -47,6 +47,20 @@ make
 The best way to get to grips with this is play around with some images and see
 what happens.
 
+```sh
+# some starter commands:
+
+./src/nftgen --file ./example/alexander_great_head.png --block-size 10
+
+./src/nftgen --file ./example/alexander_great_head.png  --block-size 0
+
+# This will seg-fault after creating 3 images.
+./src/nftgen --file ./example/alexander_great_head.png --edge-detection
+
+# A precanned script
+./scripts/mixcolors.sh ./example/alexander_great_head.png
+```
+
 ## Disclaimer
 
 This is joke and just for fun, I was interested in experimenting with images
@@ -54,3 +68,4 @@ and pixel manipulation. I'd strongly advise against trying to sell anything
 created by this program on opensea as listing something on the website will
 set you back a couple hundred pounds. Though if you do and make millions,
 I'd be like the program to be mentioned :).
+
