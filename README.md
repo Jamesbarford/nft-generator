@@ -19,22 +19,22 @@ Before ($unsellable)             |  After $1,000,000 (appx)
 - [ ] Ability to make millions from selling these....
 
 # Building
-This requires installing `libpq` for handling `png` files:
+This requires installing `libpng` for handling `png` files:
 
 __mac:__
 ```sh
-brew install libpq
+brew install libpng
 ```
 
 __Fedora:__
 ```sh
-sudo dnf install libpq-devel
+sudo dnf install libpng-devel
 
 ```
 
 __Ubuntu:__
 ```sh
-sudo apt-get install libpq-dev
+sudo apt-get install libpng-dev
 ```
 
 ## Compiling
